@@ -239,32 +239,6 @@ MultiQC aggregates QC results from multiple tools and samples into a single inte
 | | Genes per cell | >1,000 |
 | | Total genes | >15,000 |
 
-## 🛠️ Troubleshooting
-
-<details>
-<summary>Common Issues and Solutions</summary>
-
-### ❌ Missing Synapse Files
-**Problem**: Files not found in Synapse project  
-**Solution**: Check `download_summary.csv` for failed downloads
-
-### ❌ Low Quality Scores  
-**Problem**: FastQC shows poor quality  
-**Solution**: Adjust fastp parameters or flag problematic samples
-
-### ❌ Cell Ranger Failures
-**Problem**: Processing crashes or fails  
-**Solution**: 
-- Check sample naming conventions
-- Verify file paths  
-- Increase memory allocation
-
-### ❌ Memory Issues
-**Problem**: Out of memory errors  
-**Solution**: Increase `--localmem` parameter for Cell Ranger
-
-</details>
-
 ## 💾 Resource Requirements
 
 | Resource | Requirement |
@@ -311,10 +285,10 @@ MultiQC aggregates QC results from multiple tools and samples into a single inte
 
 ## 📞 Contact
 
-- **👨‍🔬 Principal Investigator**: [Name]
-- **👩‍💻 Data Analyst**: [Your name]  
+- **👨‍🔬 Principal Investigator**: Sara Saez-Atienzar, PhD
+- **👩‍💻 Data Analyst**: Gerald Gaitos, MD, MSc
 - **🔗 Synapse Project**: [syn53254216](https://www.synapse.org/#!Synapse:syn53254216)
-- **📧 Email**: [contact@institution.edu]
+- **📧 Email**: gerald.gaitos@osumc.edu
 
 ## 📄 License
 
