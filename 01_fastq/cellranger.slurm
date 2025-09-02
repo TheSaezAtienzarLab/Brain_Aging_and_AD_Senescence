@@ -3,11 +3,11 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=16
 #SBATCH --account=PAS2598
-#SBATCH --job-name=cellranger_count
+#SBATCH --job-name=cellranger_paired
 #SBATCH --output=/fs/scratch/PAS2598/senes_raw/logs/cellranger_%A_%a.log
 
 echo "=========================================="
-echo "Cell Ranger Count Processing - Simple Version"
+echo "Cell Ranger Count Processing - Paired Version"
 echo "Job ID: $SLURM_JOB_ID"
 echo "Date: $(date)"
 echo "Node: $HOSTNAME"
@@ -28,27 +28,26 @@ TRANSCRIPTOME="/fs/ess/PAS2598/ggaitos/2025/data/references/refdata-gex-GRCh38-2
 mkdir -p ${CELLRANGER_OUTPUT_DIR}/{cDNA,HTO}
 mkdir -p ${SYMLINK_DIR}/{cDNA,HTO}
 
-echo "Processing files directly from trimmed_reads directories..."
-
-# Get sample name from command line argument or use first available
-if [[ -n "$1" ]]; then
-    SAMPLE_PREFIX="$1"
-else
-    echo "Usage: sbatch cellranger_count.sh SAMPLE_PREFIX"
-    echo "Available samples:"
-    ls ${TRIMMED_READS_DIR}/cDNA/ | cut -d'_' -f1 | sort -u | head -10
+# Get base sample name from command line argument
+if [[ -z "$1" ]]; then
+    echo "Usage: sbatch cellranger_paired.sh BASE_SAMPLE_NAME"
+    echo "Example: sbatch cellranger_paired.sh NPSAD-122-A1"
     exit 1
 fi
 
-echo "Processing sample: $SAMPLE_PREFIX"
+BASE_SAMPLE="$1"
+echo "Processing base sample: $BASE_SAMPLE"
 
 # Function to process a library type
 process_library() {
     local library_type="$1"
-    local sample_prefix="$2"
+    local base_sample="$2"
     
     echo ""
-    echo "Processing ${library_type} for ${sample_prefix}..."
+    echo "Processing ${library_type} for ${base_sample}..."
+    
+    # Construct the expected sample prefix
+    local sample_prefix="${base_sample}-${library_type}"
     
     # Find R1 and R2 files
     local r1_file=$(ls ${TRIMMED_READS_DIR}/${library_type}/${sample_prefix}_*R1_trimmed.fastq.gz 2>/dev/null | head -1)
@@ -56,6 +55,8 @@ process_library() {
     
     if [[ ! -f "$r1_file" || ! -f "$r2_file" ]]; then
         echo "Skipping ${library_type}: Files not found for ${sample_prefix}"
+        echo "  Looking for: ${TRIMMED_READS_DIR}/${library_type}/${sample_prefix}_*R1_trimmed.fastq.gz"
+        echo "  Looking for: ${TRIMMED_READS_DIR}/${library_type}/${sample_prefix}_*R2_trimmed.fastq.gz"
         return 1
     fi
     
@@ -70,10 +71,14 @@ process_library() {
     ln -sf "$r1_file" "$symlink_r1"
     ln -sf "$r2_file" "$symlink_r2"
     
+    echo "Created symlinks:"
+    echo "  $(basename $symlink_r1) -> $(basename $r1_file)"
+    echo "  $(basename $symlink_r2) -> $(basename $r2_file)"
+    
     # Check if already processed
-    local output_dir="${CELLRANGER_OUTPUT_DIR}/${library_type}/${sample_prefix}"
+    local output_dir="${CELLRANGER_OUTPUT_DIR}/${library_type}/${base_sample}"
     if [[ -f "${output_dir}/outs/filtered_feature_bc_matrix/barcodes.tsv.gz" ]]; then
-        echo "Already processed: ${sample_prefix} ${library_type}"
+        echo "Already processed: ${base_sample} ${library_type}"
         return 0
     fi
     
@@ -83,9 +88,9 @@ process_library() {
     # Run Cell Ranger
     cd ${CELLRANGER_OUTPUT_DIR}/${library_type}
     
-    echo "Running Cell Ranger for ${sample_prefix} ${library_type}..."
+    echo "Running Cell Ranger for ${base_sample} ${library_type}..."
     cellranger count \
-        --id="${sample_prefix}" \
+        --id="${base_sample}" \
         --transcriptome="${TRANSCRIPTOME}" \
         --fastqs="${SYMLINK_DIR}/${library_type}" \
         --sample="${sample_prefix}" \
@@ -98,21 +103,23 @@ process_library() {
     # Check success
     if [[ -f "${output_dir}/outs/filtered_feature_bc_matrix/barcodes.tsv.gz" ]]; then
         local cell_count=$(zcat "${output_dir}/outs/filtered_feature_bc_matrix/barcodes.tsv.gz" | wc -l)
-        echo "SUCCESS: ${sample_prefix} ${library_type} - ${cell_count} cells"
+        echo "SUCCESS: ${base_sample} ${library_type} - ${cell_count} cells"
         return 0
     else
-        echo "FAILED: ${sample_prefix} ${library_type}"
+        echo "FAILED: ${base_sample} ${library_type}"
         return 1
     fi
 }
 
-# Process both library types
+# Start processing
 start_time=$(date +%s)
 
-process_library "cDNA" "$SAMPLE_PREFIX"
+# Process cDNA library
+process_library "cDNA" "$BASE_SAMPLE"
 cdna_result=$?
 
-process_library "HTO" "$SAMPLE_PREFIX"  
+# Process HTO library
+process_library "HTO" "$BASE_SAMPLE"
 hto_result=$?
 
 # Summary
@@ -121,10 +128,21 @@ duration=$(( (end_time - start_time) / 60 ))
 
 echo ""
 echo "=========================================="
-echo "Processing Complete for ${SAMPLE_PREFIX}"
+echo "Processing Complete for ${BASE_SAMPLE}"
 echo "Duration: ${duration} minutes"
 echo "cDNA: $([ $cdna_result -eq 0 ] && echo "SUCCESS" || echo "FAILED")"
 echo "HTO: $([ $hto_result -eq 0 ] && echo "SUCCESS" || echo "FAILED")"
+
+# Show output structure
+if [[ $cdna_result -eq 0 ]]; then
+    echo ""
+    echo "cDNA Output: ${CELLRANGER_OUTPUT_DIR}/cDNA/${BASE_SAMPLE}/"
+fi
+
+if [[ $hto_result -eq 0 ]]; then
+    echo "HTO Output: ${CELLRANGER_OUTPUT_DIR}/HTO/${BASE_SAMPLE}/"
+fi
+
 echo "=========================================="
 
 exit $(( cdna_result + hto_result ))
