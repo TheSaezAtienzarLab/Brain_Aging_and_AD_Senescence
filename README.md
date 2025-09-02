@@ -5,196 +5,201 @@
 [![Cell Ranger](https://img.shields.io/badge/Cell%20Ranger-7.2.0-green)](https://support.10xgenomics.com/single-cell-gene-expression/software/overview/welcome)
 [![Reference](https://img.shields.io/badge/Reference-GRCh38--2020--A-orange)](https://www.10xgenomics.com/)
 
-> **Investigating cellular senescence patterns in aging human brain tissue using single-cell RNA sequencing as a baseline for future case-control studies.**
+> **Large-scale investigation of cellular senescence patterns in aging human brain tissue using multiplexed single-cell RNA sequencing.**
 
 ## 📋 Table of Contents
 
 - [Project Overview](#-project-overview)
-- [Study Design](#-study-design)
-- [Environment Requirements](#-environment-requirements)
+- [Experimental Design](#-experimental-design)
 - [Analysis Workflow](#-analysis-workflow)
 - [Current Progress](#-current-progress)
-- [Sample Selection Details](#-sample-selection-details)
+- [Multiplexed Sample Structure](#-multiplexed-sample-structure)
+- [Post-Demultiplexing Strategy](#-post-demultiplexing-strategy)
 - [Contact Information](#-contact-information)
 
 ## 🎯 Project Overview
 
-**Objective**: Investigate cellular senescence patterns in aging human brain tissue using single-cell RNA sequencing as a baseline for future case-control studies.
+**Objective**: Investigate cellular senescence patterns in aging human brain tissue using single-cell RNA sequencing across a large cohort of healthy aging controls.
 
-### 🔬 Study Design
+### 🔬 Experimental Design
 
 | Parameter | Value |
 |-----------|-------|
 | **Tissue** | Human prefrontal cortex |
 | **Sample Type** | Healthy aging controls |
-| **Final Sample Size** | n=113 (paired samples) |
-| **Original Dataset** | n=195 (reduced to paired samples only) |
+| **Multiplexed Pools** | n=113 pools |
+| **Individual Donors** | ~678 individuals (6 per pool average) |
 | **Technology** | Single-cell RNA-seq with HTO multiplexing |
+| **Multiplexing Strategy** | 1-6 donors per pool with unique HTO barcodes |
+| **Technical Replicates** | 2 per pool (A1, A2) |
 | **Exclusion Criteria** | CERAD or BRAAK scores >0 |
 | **Reference Genome** | hg38/GRCh38-2020-A |
 | **Data Source** | [Synapse syn53254216](https://www.synapse.org/#!Synapse:syn53254216) |
 
-## 🛠️ Environment Requirements
+## 🧪 Multiplexed Sample Structure
 
-- **Computing Platform**: Ohio Supercomputer Center (OSC) HPC
-- **Memory**: 64GB RAM for Cell Ranger processing
-- **Storage**: ~3TB total (2TB raw + 1TB processed)
-- **Dependencies**: Cell Ranger 7.2.0, FastQC, fastp, MultiQC, Scanpy
+### **Pool Organization:**
+```
+Pool Example: NPSAD_147_A
+├── 6 Individual Donors (mixed together)
+│   ├── AMPAD_MSSM_0000083136 → HTO: CTTATCACCGCTCAA
+│   ├── AMPAD_MSSM_0000094462 → HTO: TGACGCCGTTGTTGT
+│   ├── AMPAD_HBCC_0000000392 → HTO: GCCTAGTATGATCCA
+│   ├── AMPAD_HBCC_0000000433 → HTO: AGTCACAGTATTCCA
+│   ├── AMPAD_MSSM_0000036121 → HTO: TTCCTGCCATTACTA
+│   └── AMPAD_MSSM_0000037330 → HTO: CCGTACCTCATTGTT
+├── Technical Replicate 1 (A1)
+│   ├── cDNA library: NPSAD-147-A1-cDNA_*.fastq.gz
+│   └── HTO library: NPSAD-147-A1-HTO_*.fastq.gz
+└── Technical Replicate 2 (A2)
+    ├── cDNA library: NPSAD-147-A2-cDNA_*.fastq.gz
+    └── HTO library: NPSAD-147-A2-HTO_*.fastq.gz
+```
+
+### **Scale:**
+- **113 multiplexed pools** × **~6 donors per pool** = **~678 individual donors**
+- **226 technical replicates** (113 pools × 2 replicates each)
+- **Expected total cells**: ~3.4 million cells (~5K per replicate)
 
 ## 🔄 Analysis Workflow
 
 ```
-📊 Raw Fastq Data (✅ COMPLETED)
+📊 Raw Multiplexed Data (✅ COMPLETED)
+    ├── 113 pools with 1-6 donors each
+    └── 678 individual donors total
     ↓
-🔍 Quality Control Assessment (✅ COMPLETED)
-    ├── FastQC → 📈 Per-Sample Quality Reports
-    ├── MultiQC → 📋 Aggregated QC Summary
-    └── Quality Metrics → 📊 Sample Assessment
-    ↓
-✨ Fastq Cleaning (✅ COMPLETED)
-    ├── fastp Processing → 🧹 Adapter/Quality Trimming
-    └── Post-Cleaning QC → ✅ Quality Improvement Validated
+🔍 Quality Control & Cleaning (✅ COMPLETED)
+    ├── FastQC → 📈 Quality Assessment
+    ├── fastp → 🧹 Adapter/Quality Trimming
+    └── MultiQC → 📋 Aggregated Reports
     ↓
 🧮 Cell Ranger Processing (🔄 IN PROGRESS)
-    ├── Count Matrix Generation → 📊 Gene × Cell Counts
-    ├── cDNA Library Processing → 🧬 Gene Expression Data
-    └── HTO Library Processing → 🏷️ Hashtag Oligo Data
+    ├── Per-Pool Processing → 📊 Count Matrices
+    ├── cDNA Libraries → 🧬 Gene Expression (~20K genes)
+    └── HTO Libraries → 🏷️ Hashtag Oligo Counts (~6 HTOs)
     ↓
 🔬 HTO Demultiplexing (📋 NEXT)
-    ├── HashSolo Processing → 🧪 Sample Assignment
-    ├── Cell Quality Filtering → 🔍 Remove Doublets/Negatives
-    └── Sample Separation → 🏷️ Individual Sample Matrices
+    ├── HTODemux → 🧪 Individual Donor Assignment
+    ├── Quality Filtering → 🔍 Remove Doublets/Negatives
+    └── Donor Separation → 👤 ~678 Individual Matrices
     ↓
-📈 Senescence Analysis (📋 PLANNED)
+📊 Data Integration (📋 PLANNED)
+    ├── Age Metadata Mapping → 📅 Age for Each Donor
+    ├── Quality Control → 📈 Cell/Gene Filtering
+    └── Batch Effect Correction → ⚖️ Pool Harmonization
+    ↓
+📈 Senescence Analysis (📋 FUTURE)
     ├── Cell Type Identification → 🧠 Brain Cell Populations
-    ├── Senescence Markers → ⏰ Aging-Related Gene Expression
-    └── Age Correlation Analysis → 📊 Senescence Patterns
+    ├── Senescence Markers → ⏰ Age-Related Expression
+    └── Population Analysis → 📊 Aging Patterns (n=678)
 ```
 
 ## 📊 Current Progress
 
 ### ✅ Completed
-- [x] Sample selection and metadata curation
-- [x] Synapse data download setup
-- [x] Raw fastq file download (original 195 samples)
+- [x] Multiplexed sample download (113 pools)
+- [x] HTO barcode mapping metadata integration
 - [x] FastQC quality assessment on raw data
-- [x] MultiQC report generation and quality evaluation
-- [x] Fastq cleaning and filtering with fastp
-- [x] Post-cleaning quality control validation
+- [x] MultiQC report generation and evaluation
+- [x] fastp cleaning and quality trimming
 - [x] Sample pairing analysis (cDNA ↔ HTO matching)
 
 ### 🔄 In Progress  
-- [ ] Cell Ranger count matrix generation (0/113 paired samples)
-- [ ] cDNA library processing for gene expression
-- [ ] HTO library processing for sample demultiplexing
+- [ ] Cell Ranger processing (0/113 pools completed)
+- [ ] Count matrix generation for each pool
 
-### 📋 Next Steps
-- [ ] Complete Cell Ranger processing for all 113 paired samples
-- [ ] HTO demultiplexing using HashSolo or demuxlet
-- [ ] Age metadata integration and distribution analysis
-- [ ] Quality control of count matrices
-- [ ] Cell type identification and annotation
-- [ ] Senescence marker analysis
+### 📋 Next Steps (Critical Path)
+- [ ] Complete Cell Ranger for all 113 pools
+- [ ] HTODemux: Separate pools into individual donors
+- [ ] Map HTO barcodes to IndividualIDs using metadata
+- [ ] Integrate age/demographic data for ~678 donors
+- [ ] Quality control across individual donor matrices
+- [ ] Batch effect correction across pools
 
-## 🔍 Sample Selection Details
+## 🧮 Cell Ranger Processing Status
 
-### **From 195 to 113 Samples**
+**Current Configuration:**
+- **Processing unit**: 1 pool = 1 Cell Ranger job
+- **Input per pool**: cDNA + HTO paired libraries
+- **Expected output per pool**: 2 count matrices (mixed donors)
+- **Processing time**: ~4 hours per pool
+- **Total compute time**: ~450 CPU hours
 
-| Library Type | Files | Unique Samples | Status |
-|--------------|-------|----------------|--------|
-| **cDNA** | 226 files | 113 samples | ✅ Complete |
-| **HTO** | 566 files | 283 samples | ⚠️ Subset used |
-| **Paired** | 452 files | **113 samples** | ✅ **Final dataset** |
-
-**Rationale for Sample Reduction:**
-- Only samples with **both cDNA and HTO** libraries can be demultiplexed
-- 113 samples have complete paired data required for downstream analysis
-- Remaining 170 samples (283 HTO - 113 paired) lack cDNA libraries
-- Quality over quantity approach for robust senescence analysis
-
-### **Processing Statistics**
-
-| Stage | Original | After QC | After Pairing | Success Rate |
-|-------|----------|----------|---------------|--------------|
-| **Raw Data** | 195 samples | - | - | 100% |
-| **FastQ Trimming** | 195 samples | 113 cDNA + 283 HTO | - | Variable |
-| **Library Pairing** | 396 total | 113 paired | **113 final** | **58% paired** |
-
-## 🧮 Cell Ranger Processing
-
-**Current Processing Status:**
-- **Samples queued**: 113 paired samples
-- **Expected output**: ~5,000 cells per sample (~565K total cells)
-- **Processing time**: ~4 hours per sample
-- **Total estimated time**: ~450 CPU hours
-
-**Output Organization:**
+**Output Structure:**
 ```
 cellranger_results/
 ├── cDNA/
-│   ├── NPSAD-122-A1/
-│   │   ├── outs/filtered_feature_bc_matrix/
-│   │   ├── outs/web_summary.html
-│   │   └── outs/metrics_summary.csv
-│   └── [112 more samples...]
+│   ├── NPSAD-147-A1/    # Pool A1 - mixed 6 donors
+│   ├── NPSAD-147-A2/    # Pool A2 - mixed 6 donors
+│   └── [111 more pools...]
 └── HTO/
-    ├── NPSAD-122-A1/    # Matching sample name
-    └── [112 more samples...]
+    ├── NPSAD-147-A1/    # HTO counts for donor separation
+    ├── NPSAD-147-A2/
+    └── [111 more pools...]
 ```
 
-## 📈 Expected Quality Metrics
+## 🔬 Post-Demultiplexing Strategy
 
-| Metric | Target | Expected Range |
-|--------|--------|----------------|
-| **Estimated cells** | ~5,000 per sample | 3,000-8,000 |
-| **Reads per cell** | >20,000 | 15,000-50,000 |
-| **Genes per cell** | >1,000 | 800-3,000 |
-| **Total genes detected** | >15,000 | 15,000-20,000 |
-| **Mitochondrial %** | <20% | 5-15% |
+### **HTODemux Workflow:**
+```r
+# For each pool (e.g., NPSAD_147_A1)
+pbmc <- HTODemux(pbmc, assay = "HTO")
+
+# Expected output per pool:
+table(pbmc$HTO_maxID)
+# CTTATCACCGCTCAA  TGACGCCGTTGTTGT  GCCTAGTATGATCCA  
+#      820              780              790
+# AGTCACAGTATTCCA  TTCCTGCCATTACTA  CCGTACCTCATTGTT
+#      800              760              820
+```
+
+### **Individual Donor Extraction:**
+1. **Map HTO barcodes to IndividualIDs** using metadata table
+2. **Extract cells for each donor** from pooled data
+3. **Create individual count matrices** (one per donor)
+4. **Quality filter each donor** separately
+5. **Integrate age metadata** for senescence analysis
+
+### **Expected Final Dataset:**
+- **~678 individual donor matrices**
+- **Age range**: Likely 50-100+ years
+- **Cell counts**: ~3,000-8,000 cells per donor
+- **Ready for population-scale senescence analysis**
+
+## 📈 Quality Metrics Targets
+
+| Stage | Metric | Target | Expected |
+|-------|--------|--------|----------|
+| **Per Pool** | Estimated cells | ~5,000 | 3,000-8,000 |
+| | Reads per cell | >20,000 | 15,000-50,000 |
+| **Post-Demux** | Singlet rate | >70% | 70-85% |
+| | Doublet rate | <15% | 5-15% |
+| **Per Donor** | Cells recovered | >1,000 | 500-2,000 |
+| | Genes per cell | >1,000 | 800-3,000 |
 
 ## 💾 Resource Requirements
 
-| Resource | Allocated | Usage |
-|----------|-----------|-------|
-| **Storage** | ~3TB total | 2TB raw + 1TB processed |
-| **Memory** | 64GB per job | Cell Ranger processing |
-| **CPU** | 16 cores per job | Parallel alignment |
-| **Time** | 12 hours per job | Buffer for completion |
-| **Jobs** | 113 concurrent | One per paired sample |
+| Resource | Current | Post-Demux | Final Analysis |
+|----------|---------|------------|----------------|
+| **Storage** | ~3TB | ~5TB | ~8TB |
+| **Processing** | 113 pools | 678 donors | Population study |
+| **Memory** | 64GB/job | 32GB/donor | 128GB+ |
+| **Compute Time** | 450 CPU hrs | 200 CPU hrs | Variable |
 
-## 📌 Software Versions
+## 🎯 Expected Scientific Impact
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Python | 3.10 | Analysis environment |
-| Cell Ranger | 7.2.0 | Single-cell processing |
-| FastQC | 0.12.1 | Quality assessment |
-| fastp | 0.23.4 | Read cleaning |
-| MultiQC | 1.15 | Report aggregation |
-| Reference | GRCh38-2020-A | Human genome |
+### **Study Power:**
+- **Sample size**: ~678 individuals (unprecedented for sc-RNA-seq aging)
+- **Age coverage**: Broad age range for robust aging analysis
+- **Cell resolution**: ~3.4M cells total for rare cell type detection
+- **Statistical power**: Large N for senescence marker validation
 
-## 🎯 Expected Outputs
-
-### Current Phase (Cell Ranger)
-- **📊 Count Matrices**: 113 × 2 = 226 count matrices (cDNA + HTO)
-- **📈 QC Reports**: 226 Cell Ranger web summaries
-- **📋 Metrics Files**: Processing and quality statistics
-- **🏷️ HTO Data**: Hashtag oligo counts for demultiplexing
-
-### Next Phases
-- **🧪 Demultiplexed Data**: Individual sample assignments per cell
-- **🔍 Quality Metrics**: Cell/sample statistics post-demultiplexing
-- **⏰ Senescence Profiles**: Age-related expression patterns
-- **🧠 Cell Type Annotations**: Brain-specific cell populations
-
-## 🔮 Immediate Next Steps
-
-1. **🧮 Complete Cell Ranger**: Process all 113 paired samples
-2. **📊 Age Metadata**: Integrate age information for samples
-3. **🔬 HTO Demultiplexing**: Use HashSolo for sample separation
-4. **📈 Quality Assessment**: Evaluate Cell Ranger outputs
-5. **🧠 Cell Type Annotation**: Identify brain cell populations
-6. **⏰ Senescence Analysis**: Examine aging markers and patterns
+### **Key Analyses Enabled:**
+- **Population-scale senescence patterns**
+- **Age-stratified cell type analysis**
+- **Rare senescent cell identification**
+- **Brain aging biomarker discovery**
+- **Cellular senescence heterogeneity**
 
 ## 📞 Contact Information
 
@@ -212,6 +217,6 @@ cellranger_results/
 
 *Last Updated: September 2025 | Status: Phase 3 - Cell Ranger Processing*
 
-**Final Dataset: 113 Paired Samples | ~565K Expected Cells**
+**Dataset: 113 Multiplexed Pools | ~678 Individual Donors | ~3.4M Cells**
 
 </div>
