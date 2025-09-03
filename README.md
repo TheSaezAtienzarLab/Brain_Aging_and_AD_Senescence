@@ -1,8 +1,8 @@
 # 🧬 Single-cell RNA-seq Analysis of Brain Aging and Senescence
 
-[![Project Status](https://img.shields.io/badge/Status-Cell%20Ranger%20Processing-green)](https://github.com)
+[![Project Status](https://img.shields.io/badge/Status-Multimodal%20Cell%20Ranger-orange)](https://github.com)
 [![Python](https://img.shields.io/badge/Python-3.10-blue)](https://www.python.org/)
-[![Cell Ranger](https://img.shields.io/badge/Cell%20Ranger-7.2.0-green)](https://support.10xgenomics.com/single-cell-gene-expression/software/overview/welcome)
+[![Cell Ranger](https://img.shields.io/badge/Cell%20Ranger-9.0.1-green)](https://support.10xgenomics.com/single-cell-gene-expression/software/overview/welcome)
 [![Reference](https://img.shields.io/badge/Reference-GRCh38--2020--A-orange)](https://www.10xgenomics.com/)
 
 > **Large-scale investigation of cellular senescence patterns in aging human brain tissue using multiplexed single-cell RNA sequencing.**
@@ -73,15 +73,15 @@ Pool Example: NPSAD_147_A
     ├── fastp → 🧹 Adapter/Quality Trimming
     └── MultiQC → 📋 Aggregated Reports
     ↓
-🧮 Cell Ranger Processing (🔄 IN PROGRESS)
-    ├── Per-Pool Processing → 📊 Count Matrices
-    ├── cDNA Libraries → 🧬 Gene Expression (~20K genes)
-    └── HTO Libraries → 🏷️ Hashtag Oligo Counts (~6 HTOs)
+🧮 Cell Ranger Multimodal Processing (🔄 IN PROGRESS)
+    ├── Multimodal Analysis → 📊 cDNA + HTO Combined Matrices
+    ├── Gene Expression → 🧬 ~36K genes per sample
+    └── HTO Features → 🏷️ ~6 HTO barcodes per sample
     ↓
 🔬 HTO Demultiplexing (📋 NEXT)
     ├── HTODemux → 🧪 Individual Donor Assignment
     ├── Quality Filtering → 🔍 Remove Doublets/Negatives
-    └── Donor Separation → 👤 ~678 Individual Matrices
+    └── Donor Separation → 👤 ~678 Individual Matrices with Demographics
     ↓
 📊 Data Integration (📋 PLANNED)
     ├── Age Metadata Mapping → 📅 Age for Each Donor
@@ -103,46 +103,55 @@ Pool Example: NPSAD_147_A
 - [x] MultiQC report generation and evaluation
 - [x] fastp cleaning and quality trimming
 - [x] Sample pairing analysis (cDNA ↔ HTO matching)
+- [x] Cell Ranger summary analysis (87 paired samples identified)
 
 ### 🔄 In Progress  
-- [ ] Cell Ranger processing (0/113 pools completed)
-- [ ] Count matrix generation for each pool
+- [ ] Cell Ranger multimodal processing (0/87 samples completed)
+- [ ] Combined cDNA + HTO matrix generation per sample
 
 ### 📋 Next Steps (Critical Path)
-- [ ] Complete Cell Ranger for all 113 pools
+- [ ] Complete multimodal Cell Ranger for all 87 paired samples
+- [ ] Validate HTO feature integration in all outputs
 - [ ] HTODemux: Separate pools into individual donors
-- [ ] Map HTO barcodes to IndividualIDs using metadata
-- [ ] Integrate age/demographic data for ~678 donors
+- [ ] Extract ~520 individual donors with full demographics
 - [ ] Quality control across individual donor matrices
 - [ ] Batch effect correction across pools
 
 ## 🧮 Cell Ranger Processing Status
 
-**Current Configuration:**
-- **Processing unit**: 1 pool = 1 Cell Ranger job
-- **Input per pool**: cDNA + HTO paired libraries
-- **Expected output per pool**: 2 count matrices (mixed donors)
-- **Processing time**: ~4 hours per pool
-- **Total compute time**: ~450 CPU hours
+**CORRECTED Configuration:**
+- **Processing approach**: Multimodal Cell Ranger 9.0.1
+- **Input per sample**: cDNA + HTO processed together
+- **Expected output per sample**: Single matrix with genes + HTO features
+- **Processing time**: ~6 hours per sample
+- **Total compute time**: ~520 CPU hours
+
+**Previous Issue (RESOLVED):**
+- ❌ Previously processed cDNA and HTO separately (incorrect)
+- ✅ Now processing as multimodal (cDNA + HTO together) (correct)
 
 **Output Structure:**
 ```
-cellranger_results/
-├── cDNA/
-│   ├── NPSAD-147-A1/    # Pool A1 - mixed 6 donors
-│   ├── NPSAD-147-A2/    # Pool A2 - mixed 6 donors
-│   └── [111 more pools...]
-└── HTO/
-    ├── NPSAD-147-A1/    # HTO counts for donor separation
-    ├── NPSAD-147-A2/
-    └── [111 more pools...]
+cellranger_multimodal/
+├── NPSAD-147-A1/
+│   └── outs/filtered_feature_bc_matrix/
+│       ├── barcodes.tsv.gz     # Cell barcodes
+│       ├── features.tsv.gz     # Genes + HTO barcodes
+│       └── matrix.mtx.gz       # Combined count matrix
+├── NPSAD-147-A2/
+└── [85 more samples...]
 ```
 
 ## 🔬 Post-Demultiplexing Strategy
 
-### **HTODemux Workflow:**
+### **HTODemux Workflow (UPDATED):**
 ```r
-# For each pool (e.g., NPSAD_147_A1)
+# Load multimodal data with both genes and HTOs
+pbmc <- Read10X("cellranger_multimodal/SAMPLE/outs/filtered_feature_bc_matrix/")
+pbmc <- CreateSeuratObject(pbmc$`Gene Expression`)
+pbmc[["HTO"]] <- CreateAssayObject(pbmc$`Antibody Capture`)
+
+# Demultiplex using HTOs
 pbmc <- HTODemux(pbmc, assay = "HTO")
 
 # Expected output per pool:
@@ -153,53 +162,82 @@ table(pbmc$HTO_maxID)
 #      800              760              820
 ```
 
-### **Individual Donor Extraction:**
-1. **Map HTO barcodes to IndividualIDs** using metadata table
-2. **Extract cells for each donor** from pooled data
-3. **Create individual count matrices** (one per donor)
-4. **Quality filter each donor** separately
-5. **Integrate age metadata** for senescence analysis
+### **Individual Donor Extraction (ENHANCED):**
+1. **Load multimodal Cell Ranger output** (genes + HTOs combined)
+2. **Map HTO barcodes to IndividualIDs** using NPS-AD metadata
+3. **Extract cells for each donor** from pooled data  
+4. **Include full demographics** (age, sex, PMI, Braak scores, APOE status)
+5. **Create individual H5/MTX files** for each donor
+6. **Quality filter each donor** separately
 
 ### **Expected Final Dataset:**
-- **~678 individual donor matrices**
-- **Age range**: Likely 50-100+ years
-- **Cell counts**: ~3,000-8,000 cells per donor
+- **~520 individual donor matrices** (from 87 paired samples)
+- **Rich demographics**: Age at death, sex, PMI, pathology scores
+- **Age range**: 26-100 years (based on metadata)
+- **Cell counts**: ~1,000-8,000 cells per donor
 - **Ready for population-scale senescence analysis**
 
 ## 📈 Quality Metrics Targets
 
 | Stage | Metric | Target | Expected |
 |-------|--------|--------|----------|
-| **Per Pool** | Estimated cells | ~5,000 | 3,000-8,000 |
-| | Reads per cell | >20,000 | 15,000-50,000 |
+| **Multimodal** | Gene features | ~36,000 | 36,601 |
+| | HTO features | ~6 | 3-6 |
+| | Total cells | ~5,000 | 3,000-50,000 |
 | **Post-Demux** | Singlet rate | >70% | 70-85% |
 | | Doublet rate | <15% | 5-15% |
-| **Per Donor** | Cells recovered | >1,000 | 500-2,000 |
-| | Genes per cell | >1,000 | 800-3,000 |
+| **Per Donor** | Cells recovered | >500 | 500-8,000 |
+| | Genes per cell | >1,000 | 800-4,000 |
 
 ## 💾 Resource Requirements
 
 | Resource | Current | Post-Demux | Final Analysis |
 |----------|---------|------------|----------------|
-| **Storage** | ~3TB | ~5TB | ~8TB |
-| **Processing** | 113 pools | 678 donors | Population study |
-| **Memory** | 64GB/job | 32GB/donor | 128GB+ |
-| **Compute Time** | 450 CPU hrs | 200 CPU hrs | Variable |
+| **Storage** | ~4TB | ~6TB | ~10TB |
+| **Processing** | 87 samples | 520 donors | Population study |
+| **Memory** | 128GB/job | 64GB/donor | 256GB+ |
+| **Compute Time** | 520 CPU hrs | 200 CPU hrs | Variable |
 
 ## 🎯 Expected Scientific Impact
 
 ### **Study Power:**
-- **Sample size**: ~678 individuals (unprecedented for sc-RNA-seq aging)
-- **Age coverage**: Broad age range for robust aging analysis
-- **Cell resolution**: ~3.4M cells total for rare cell type detection
+- **Sample size**: ~520 individuals (unprecedented for sc-RNA-seq aging)
+- **Age coverage**: 26-100 years for robust aging analysis  
+- **Cell resolution**: ~2-3M cells total for rare cell type detection
+- **Demographic richness**: Sex, race, APOE status, pathology scores
 - **Statistical power**: Large N for senescence marker validation
 
 ### **Key Analyses Enabled:**
 - **Population-scale senescence patterns**
-- **Age-stratified cell type analysis**
+- **Age-stratified cell type analysis** 
+- **Sex-specific aging effects**
+- **APOE4 vs aging interactions**
 - **Rare senescent cell identification**
 - **Brain aging biomarker discovery**
 - **Cellular senescence heterogeneity**
+
+## 🚀 Usage Instructions
+
+### **Run multimodal Cell Ranger on all samples:**
+```bash
+# Process all 87 paired samples with multimodal approach
+bash batch_multimodal_processing.sh
+```
+
+### **Monitor progress:**
+```bash
+# Check processing status
+bash /fs/scratch/PAS2598/senes_raw/scripts/check_multimodal_progress.sh
+
+# Verify HTO integration
+zcat /fs/scratch/PAS2598/senes_raw/cellranger_multimodal/SAMPLE/outs/filtered_feature_bc_matrix/features.tsv.gz | grep "Antibody Capture"
+```
+
+### **Demultiplex individual donors:**
+```bash
+# Once multimodal processing completes
+sbatch hto_demux.sh NPSAD-147-A1
+```
 
 ## 📞 Contact Information
 
@@ -215,8 +253,8 @@ table(pbmc$HTO_maxID)
 
 **🧬 Single-cell RNA-seq | 🧠 Brain Aging | 🔬 Senescence Research**
 
-*Last Updated: September 2025 | Status: Phase 3 - Cell Ranger Processing*
+*Last Updated: September 2025 | Status: Phase 3 - Multimodal Cell Ranger Processing*
 
-**Dataset: 113 Multiplexed Pools | ~678 Individual Donors | ~3.4M Cells**
+**Dataset: 87 Paired Samples | ~520 Individual Donors | ~2.5M Cells**
 
 </div>
