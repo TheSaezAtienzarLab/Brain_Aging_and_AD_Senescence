@@ -221,7 +221,7 @@ Analysis code is available upon request.
 
 - **Analyst**: Gerald Gaitos
 - **Institution**: Ohio State University
-- **Email**: [Your email]
+- **Email**: ggaitos@osumc.edu
 
 ---
 
