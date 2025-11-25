@@ -14,7 +14,7 @@ This repository contains the analytical methods for comprehensive single-nucleus
 - **Cohorts**: 
   - Aging cohort: 7 age groups (20-29 through >80 years)
   - AD cohort: Young_Control, Old_Control, Old_Cases
-- **Scale**: 6.3M+ nuclei from 1,494 donors
+- **Scale**: 500K+ nuclei from 124 donors
 
 ## Analysis Pipeline
 
