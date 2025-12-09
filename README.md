@@ -139,10 +139,10 @@
 │  2. Cell-type + sex-specific scoring                    │
 │  3. Threshold: mean + 2SD (from youngest age group)     │
 │  4. Binary classification: SnC vs Non-SnC               │
-│                                                          │
-│  Validation:                                             │
-│  ✓ Canonical markers (CDKN1A, CDKN2A, TP53)            │
-│  ✓ SASP factors (IL6, IL8, CCL2, CXCL1)                │
+│                                                         │
+│  Validation:                                            │
+│  ✓ Canonical markers (CDKN1A, CDKN2A, TP53)             │
+│  ✓ SASP factors (IL6, IL8, CCL2, CXCL1)                 │
 │  ✓ Pathway correlation analysis                         │
 └─────────────────────────────────────────────────────────┘
 ```
