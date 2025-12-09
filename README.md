@@ -201,7 +201,7 @@ Leiden clustering →
 ├─ Neuronal surveillance
 └─ Stress-associated
 ```
-*Markers: Saez-Atienzar et al. (2024)*
+*Markers: Garg et al. (2024)*
 
 </td>
 <td width="50%">
