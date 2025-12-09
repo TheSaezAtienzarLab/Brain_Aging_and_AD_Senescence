@@ -671,7 +671,7 @@ If you use these methods or data, please cite:
 - Gerald Gaitos, MD, MSc | Ohio State University
 
 **Institution**
-- Center for Neurodegeneration Research, Ohio State University
+- Department of Neurology, Ohio State University
 
 ---
 
