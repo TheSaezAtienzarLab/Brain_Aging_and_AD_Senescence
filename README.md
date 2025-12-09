@@ -45,7 +45,7 @@
 │  │   • n=124 samples      │        │   • n=172 samples      │           │
 │  │   • 7 age groups       │        │   • 3 study groups     │           │
 │  │   • 20-29 to >80y      │        │   • Young/Old Ctl/AD   │           │
-│  │   • ~500K nuclei       │        │   • ~700K nuclei       │           │ 
+│  │   • ~500K nuclei       │        │   • ~700K nuclei       │           │
 │  └────────────────────────┘        └────────────────────────┘           │
 │              │                                   │                      │
 │              └───────────┬───────────────────────┘                      │
@@ -140,10 +140,23 @@
 │  3. Threshold: mean + 2SD (from youngest age group)     │
 │  4. Binary classification: SnC vs Non-SnC               │
 │                                                         │
-│  Validation:                                            │
+│  Validation (2 approaches):                             │
+│  ───────────────────────────                            │
+│  Approach 1: Paired expression comparison               │
 │  ✓ Canonical markers (CDKN1A, CDKN2A, TP53)             │
 │  ✓ SASP factors (IL6, IL8, CCL2, CXCL1)                 │
-│  ✓ Pathway correlation analysis                         │
+│                                                         │
+│  Approach 2: Correlation analysis (SnC vs Non-SnC)      │
+│  ✓ Universal aging hallmarks:                           │
+│    - DNA damage response (DDR)                          │
+│    - Oxidative stress                                   │
+│    - Mitochondrial dysfunction                          │
+│    - Neuroinflammation                                  │
+│    - Autophagy/lysosomal                                │
+│    - Cell cycle arrest                                  │
+│    - SASP factors                                       │
+│  ✓ Pearson correlation: SnC mean vs Non-SnC mean        │
+│  ✓ Deviations from y=x line indicate SnC enrichment     │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -195,17 +208,63 @@ Leiden clustering →
 
 **Astrocyte States**
 ```
-Leiden clustering →
-├─ Homeostatic
-├─ Reactive
-├─ Hypertrophic
-└─ Disease-associated
+Multi-step annotation workflow:
+
+1. Leiden subclustering (15-20 clusters)
+2. Signature scoring (7 signatures)
+3. Confidence assessment
+4. Brase et al. (2024) alignment
+
+Final States:
+├─ astH0_Quiescent (homeostatic)
+├─ astH0_Synaptic (synaptic support)
+├─ astH0_Transitional (low confidence)
+├─ astTinf_Inflammatory (DAA inflammatory)
+├─ astMet_Stress (metabolic/heat shock)
+├─ astR0_Neurotoxic (A1-like reactive)
+├─ astR1_Neuroprotective (A2-like)
+└─ astIFN_Novel (interferon - NOVEL)
 ```
-*Markers: Canonical literature-based*
+*Reference: Brase et al. (2024) Nature Neuroscience*
+*Novel state: astIFN not in Brase classification*
 
 </td>
 </tr>
 </table>
+
+<details>
+<summary><b>📖 Click to expand: Astrocyte Annotation Details</b></summary>
+
+**Gene Signatures Used:**
+
+1. **Homeostatic (astH0)**: GRM3, SLC1A2, SLC1A3, ALDH1L1, AQP4, GLUL
+2. **DAA Inflammatory (astTinf)**: CHI3L1, SERPINA3, GFAP, VIM, C3, GBP2
+3. **DAA Stress (astMet)**: HSPA1A/B, HSPB1, HSP90AA1, MT1X, MT2A
+4. **A1 Reactive (astR0)**: C3, GBP2, SERPING1, PSMB8
+5. **A2 Reactive (astR1/R2)**: PTX3, CD14, S100A10, CD109, EMP1
+6. **Interferon (astIFN)**: IFIT1/2/3, IFI44L, ISG15, MX1, OAS1, STAT1
+7. **Synaptic**: GRM3/5, NTRK2, BDNF, SPARC, SPARCL1, THBS1/2
+
+**Confidence Levels:**
+- **High** (score >0.5): Clear signature match, strong marker expression
+- **Moderate** (0.3-0.5): Mixed signatures or moderate expression
+- **Low** (<0.3): Weak markers, assigned as "Transitional"
+
+**Brase et al. (2024) Reference States:**
+- astH0: Homeostatic baseline
+- astIM: Immediate early response
+- astMet: Metabolic stress
+- astTinf: Terminal inflammatory
+- astR0/R1/R2: Reactive states 0-2
+- astProj: Projection-associated
+- astWM: White matter
+
+**Novel Finding:**
+- **astIFN**: Interferon-responsive astrocytes with Type I IFN signaling
+- Not described in Brase classification
+- Characterized by IFIT1/2/3, ISG15, MX1, OAS1 expression
+
+</details>
 
 ---
 
@@ -285,9 +344,9 @@ Both DLPFC region                       Both Frontal cortex
 </tr>
 
 <tr>
-<td><b>Signature Validation</b></td>
-<td>Overlap with established signatures</td>
-<td>Confirm biological validity</td>
+<td><b>DEG Signature Characterization</b></td>
+<td>DEG overlap with SenePy, SASP, inflammation</td>
+<td>Characterize known vs novel senescence mechanisms</td>
 </tr>
 
 <tr>
@@ -311,10 +370,17 @@ Both DLPFC region                       Both Frontal cortex
 - Amyloid-β areal density (quantitative, primarily Australian Brain)
 - Neurofibrillary tangle density (quantitative, primarily Australian Brain)
 
-**Signatures tested:**
-- Universal aging hallmarks (DDR, oxidative stress, mitochondrial, neuroinflammation, autophagy, cell cycle)
-- SASP factors (cytokines, chemokines, MMPs)
-- Cell-type-specific aging markers
+**Signatures analyzed:**
+- **SenePy signatures**: Hippocampus senescence modules (assess if SnC cells are limited to scoring genes)
+- **SASP factors**: IL6, IL1A/B, TNF, CCL2/3/5, CXCL1/8/10, MMP3/9/12 (test for secretory phenotype)
+- **Inflammation signatures**: TNF, IL1B, IL6, IL18, CCL2/3/4/5, CXCL1/10, TLR2/4 (test for inflammatory activation)
+
+**Purpose**: 
+- **High overlap** → Senescence driven by known pathways
+- **Low overlap** → Novel/additional mechanisms involved
+- **Unique DEGs** → Potential new senescence markers or cell-type-specific programs
+
+**Key Question**: Are senescent cells only expressing known signatures, or are there novel genes driving senescence?
 
 ---
 
@@ -550,6 +616,17 @@ If you use these methods or data, please cite:
   journal={Research Square},
   year={2024},
   doi={10.21203/rs.3.rs-5045715/v1}
+}
+```
+
+**Astrocyte States:**
+```bibtex
+@article{brase2024,
+  title={Single-nucleus RNA sequencing reveals astrocyte diversity and plasticity in Alzheimer's disease},
+  author={Brase, L. et al.},
+  journal={Nature Neuroscience},
+  year={2024},
+  note={Astrocyte nomenclature reference: astH0, astIM, astMet, astTinf, astR0/R1/R2, astProj, astWM}
 }
 ```
 
