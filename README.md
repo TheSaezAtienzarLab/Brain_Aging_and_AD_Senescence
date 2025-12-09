@@ -45,7 +45,7 @@
 │  │   • n=124 samples      │        │   • n=172 samples      │           │
 │  │   • 7 age groups       │        │   • 3 study groups     │           │
 │  │   • 20-29 to >80y      │        │   • Young/Old Ctl/AD   │           │
-│  │   • ~500K nuclei       │        │   • ~700K nuclei       │           │
+│  │   • ~500K nuclei       │        │   • ~700K nuclei       │           │ 
 │  └────────────────────────┘        └────────────────────────┘           │
 │              │                                   │                      │
 │              └───────────┬───────────────────────┘                      │
@@ -188,7 +188,7 @@ Leiden clustering →
 ├─ Neuronal surveillance
 └─ Stress-associated
 ```
-*Markers: Garg et al. (2024)*
+*Markers: Saez-Atienzar et al. (2024)*
 
 </td>
 <td width="50%">
@@ -296,7 +296,20 @@ Both DLPFC region                       Both Frontal cortex
 <td>Functional interpretation</td>
 </tr>
 
+<tr>
+<td><b>Pathology Correlations</b></td>
+<td>GLMM + Spearman/Pearson correlations</td>
+<td>Association with neuropathology (Braak, CERAD, CDR, Aβ, NFTs)</td>
+</tr>
+
 </table>
+
+**Pathology measures analyzed:**
+- Braak stage (neurofibrillary tangle staging)
+- CERAD score (neuritic plaque density)
+- CDR (Clinical Dementia Rating)
+- Amyloid-β areal density (quantitative, primarily Australian Brain)
+- Neurofibrillary tangle density (quantitative, primarily Australian Brain)
 
 **Signatures tested:**
 - Universal aging hallmarks (DDR, oxidative stress, mitochondrial, neuroinflammation, autophagy, cell cycle)
@@ -521,7 +534,7 @@ If you use these methods or data, please cite:
 ```bibtex
 @article{senescence2025,
   title={Multi-Cohort Analysis of Cellular Senescence in Brain Aging and Alzheimer's Disease},
-  author={Gaitos, Gerald and Saez-Atienzar, Sara},
+  author={Gaitos, Gerald, Souza, Iara, Harari, Oscar, and Saez-Atienzar, Sara},
   year={2025},
   journal={In preparation}
 }
@@ -533,7 +546,7 @@ If you use these methods or data, please cite:
 ```bibtex
 @article{garg2024,
   title={Exploring Cellular Heterogeneity: Single-Cell and Spatial Transcriptomics of Alzheimer Disease Brains},
-  author={Saez-Atienzar, S. et al.},
+  author={Garg, J. et al.},
   journal={Research Square},
   year={2024},
   doi={10.21203/rs.3.rs-5045715/v1}
@@ -609,8 +622,6 @@ Data: Subject to individual consortium data use agreements
 **Study Status:** ✅ Analysis Complete | 📊 Manuscript in Preparation
 
 **Last Updated:** December 2025 | **Version:** 2.0
-
-Made with ❤️ for reproducible neuroscience
 
 [⬆ Back to Top](#-cellular-senescence-in-brain-aging-and-alzheimers-disease)
 
