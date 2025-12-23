@@ -347,15 +347,15 @@ See `data/README.md` for detailed instructions.
 ## 👥 Team
 
 **Principal Investigator**
-- Sara Saez-Atienzar, PhD | The Ohio State University Wexner Medical Cent
+- Sara Saez-Atienzar, PhD | The Ohio State University Wexner Medical Center
 
 **Lead Analyst**
 - Gerald Gaitos, MD, MSc | The Ohio State University Wexner Medical Center
 
 **Collaborators**
-- Iara Souza, PhD | The Ohio State University Wexner Medical Cent
-- Oscar Harari, PhD | The Ohio State University Wexner Medical Cent
-
+- Iara Souza, PhD | The Ohio State University Wexner Medical Center
+- Oscar Harari, PhD | The Ohio State University Wexner Medical Center
+  
 ---
 
 ## 📬 Contact
