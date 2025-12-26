@@ -1,279 +1,177 @@
-# 🧬 Cellular Senescence in Brain Aging and Alzheimer's Disease
+# Cellular Senescence in Brain Aging and Alzheimer's Disease
 
-**Multi-Cohort Single-Nucleus RNA-seq Analysis**
+**Multi-cohort single-nucleus RNA-seq analysis examining cellular senescence patterns across aging and disease**
 
-[![Cohorts](https://img.shields.io/badge/Cohorts-4-blue.svg)]()
-[![Samples](https://img.shields.io/badge/Samples-366-green.svg)]()
-[![Nuclei](https://img.shields.io/badge/Nuclei-2M+-orange.svg)]()
-
-*Discovery-replication study with meta-analysis examining cellular senescence patterns in human brain aging and Alzheimer's disease*
+[![DOI](https://img.shields.io/badge/DOI-pending-blue)]() [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## 📊 Study Overview
+## Overview
 
-| Component | Details |
-|-----------|---------|
-| **Design** | Discovery-Replication with Meta-Analysis |
-| **Technology** | Single-nucleus RNA-seq (snRNA-seq) |
-| **Discovery** | PsychAD (n=296 samples) |
-| **Replication** | PsychENCODE (n=69), Mathys (n=30), Australian Brain (n=71) |
-| **Brain Regions** | DLPFC, Frontal cortex, Parietal cortex |
-| **Cell Types** | Microglia, Astrocytes, OPCs (glial focus) |
-| **Total** | 366 samples, ~2M nuclei |
+This repository contains analysis code for a discovery-replication study investigating cellular senescence in human brain across aging and Alzheimer's disease using single-nucleus RNA-sequencing.
 
----
+**Study Design:** Discovery (PsychAD) → Replication (PsychENCODE, Mathys, Australian Brain) → Meta-Analysis
 
-## 🎯 Study Aims
-
-This repository contains analysis code for investigating:
-- Cell-type-specific senescence patterns in brain aging
-- Disease-associated senescence in Alzheimer's disease
-- Cross-cohort validation using random-effects meta-analysis
-- Molecular characterization of senescent glial cells
+**Key Questions:**
+1. Does cellular senescence increase with age in healthy brain?
+2. Does Alzheimer's disease increase senescence beyond normal aging?
+3. Which cell types show age- and disease-associated senescence?
 
 ---
 
-## 🔬 Study Design
+## Cohorts
+
+| Cohort | n | Age | Condition | Region | Nuclei | Analysis |
+|--------|---|-----|-----------|--------|--------|----------|
+| PsychAD Aging | 124 | 20-80+ | Healthy aging | DLPFC | ~500K | Aging |
+| PsychAD AD | 172 | 60+ | Control/AD | DLPFC | ~700K | Disease |
+| PsychENCODE | 69 | 30-80+ | Healthy aging | DLPFC | ~500K | Aging |
+| Mathys | 30 | 70+ | Control/MCI/AD | FCX | ~70K | Disease |
+| Australian | 71 | 24-93 | Control/AD | Parietal | ~360K | Validation |
+
+**Total:** 366 samples, ~2M nuclei
+
+**Meta-Analysis:**
+- Aging: PsychAD Aging + PsychENCODE (DLPFC)
+- Disease: PsychAD AD + Mathys (Frontal cortex)
+- Validation: Australian Brain (Parietal, independent)
+
+---
+
+## Repository Structure
 
 ```
-DISCOVERY (PsychAD)
-├─ Aging cohort: n=124 (20-80+ years, 7 age groups)
-└─ AD cohort: n=172 (Young/Old Control, AD cases)
-    ↓
-Pan-cell type screening → Identified glial senescence
-    ↓
-REPLICATION
-├─ PsychENCODE: n=69 (DLPFC, aging)
-├─ Mathys: n=30 (FCX, AD)
-└─ Australian Brain: n=71 (Parietal, AD)
-    ↓
-META-ANALYSIS (stratified by region)
-├─ Aging: PsychAD + PsychENCODE (DLPFC)
-├─ AD: PsychAD + Mathys (Frontal cortex)
-└─ Validation: Australian Brain (Parietal, separate)
-```
-
----
-
-## 🧪 Analysis Pipeline
-
-### **1. Data Processing**
-
-**Quality Control**
-- Cells: ≥200 genes/cell
-- Genes: ≥3 cells/gene
-- Normalization: 10,000 counts/cell + log transform
-
-**Batch Correction**
-- Method: Harmony integration
-- Batch variable: Donor ID
-- Components: 50 PCs
-
-**Cell Type Annotation**
-- 11 major brain cell types via canonical markers
-
----
-
-### **2. Senescence Identification**
-
-**SenePy Scoring**
-1. Hippocampus-specific gene modules
-2. Cell-type and sex-specific scoring
-3. Threshold: mean + 2SD (youngest age group)
-4. Binary classification: SnC vs Non-SnC
-
-**Validation**
-- Canonical markers: CDKN1A, CDKN2A, TP53
-- SASP factors: IL6, IL8, CCL2, CXCL1
-- Correlation with aging hallmarks (DDR, oxidative stress, mitochondrial dysfunction, etc.)
-
----
-
-### **3. Glial Subclustering**
-
-**Microglia States** (Garg et al., 2024)
-- Homeostatic
-- IFN-I/II/III responsive
-- MHCII-expressing
-- Neuronal surveillance
-- Stress-associated
-
-**Astrocyte States** (Serrano-Pozo et al., 2024)
-- astH0: Homeostatic (quiescent, synaptic, transitional)
-- astTinf: DAA inflammatory
-- astMet: Metabolic/heat shock stress
-- astR0: A1-like neurotoxic reactive
-- astR1: A2-like neuroprotective
-- astIFN: Interferon-responsive (novel state)
-
-<details>
-<summary><b>Astrocyte Annotation Details</b></summary>
-
-**Gene Signatures:**
-1. Homeostatic: GRM3, SLC1A2, SLC1A3, ALDH1L1, AQP4, GLUL
-2. DAA Inflammatory: CHI3L1, SERPINA3, GFAP, VIM, C3, GBP2
-3. Metabolic Stress: HSPA1A/B, HSPB1, HSP90AA1, MT1X, MT2A
-4. A1 Reactive: C3, GBP2, SERPING1, PSMB8
-5. A2 Reactive: PTX3, CD14, S100A10, CD109, EMP1
-6. Interferon: IFIT1/2/3, IFI44L, ISG15, MX1, OAS1, STAT1
-7. Synaptic: GRM3/5, NTRK2, BDNF, SPARC, SPARCL1, THBS1/2
-
-**Confidence Assessment:**
-- High (>0.5): Clear signature match
-- Moderate (0.3-0.5): Mixed signatures
-- Low (<0.3): Weak markers → "Transitional"
-
-</details>
-
----
-
-### **4. Statistical Analysis**
-
-**Age-Associated Senescence**
-- Method: Linear mixed-effects models (LMM)
-- Formula: `%SnC ~ age × cell_type + sex + cohort + (1|donor)`
-- Accounts for within-donor correlation
-- Cell-type-specific slopes via interaction terms
-- Software: statsmodels MixedLM (Python)
-
-**Cell Type Composition**
-- Method: Multiple linear regression with cube root transformation
-- Formula: `cuberoot(proportion) ~ Age + Sex + Cohort`
-- Variance stabilization for bounded proportions (0-100%)
-- Software: sklearn LinearRegression (Python)
-
-**Cross-Cohort Meta-Analysis**
-- Method: DerSimonian-Laird random-effects
-- Inverse-variance weighting
-- Heterogeneity: Cochran's Q, I², τ²
-- Stratified by brain region (DLPFC/FCX/Parietal)
-- Software: Custom Python (NumPy, SciPy)
-
-**Multiple Testing**
-- FDR correction: Benjamini-Hochberg (α=0.05)
-- Applied across all cell types
-
----
-
-### **5. Differential Expression**
-
-**Pseudobulk Aggregation**
-- Sum counts per donor × cell type × senescence state
-- Creates donor-level profiles
-
-**DESeq2 Analysis**
-- Via Seurat FindMarkers (R)
-- Covariates: Sex + Cohort
-- Age groups: Old ≥70y, Young ≤39y
-
-**Comparisons** (per cell type):
-1. Universal senescence: SnC vs Non-SnC
-2. Aging-associated: Old SnC vs Young SnC
-3. Aging in non-senescent: Old Non-SnC vs Young Non-SnC
-4. Disease-associated: AD SnC vs Control SnC
-
-**Thresholds:** FDR < 0.05, |log₂FC| > 0.5
-
----
-
-### **6. Downstream Analyses**
-
-**Transcriptional Variability**
-- Coefficient of variation (CV)
-- Minimum: 10 cells per group, 3 paired donors
-
-**Variance Partition**
-- Package: variancePartition (R)
-- Focus: SenePy gene set
-- Model: 8 fixed + 5 random effects
-
-**Pathway Enrichment**
-- Tools: SCPA + Enrichr
-- Databases: MSigDB, GO Biological Process, KEGG
-- Separate analysis for SnC vs Non-SnC DEGs
-
-**Cell-Cell Communication**
-- Tool: CellPhoneDB v5.0.0
-- Groups: Cell type × senescence status
-- QC: ≥200 cells per group
-- Permutation testing: 1,000 iterations
-
-**Pathology Correlations**
-- Measures: Braak, CERAD, CDR, Aβ, NFTs
-- Methods: Spearman/Pearson correlations
-
----
-
-## 💻 Computational Environment
-
-**Software versions used in this analysis are documented in `session_info.txt`**
-
-**Python 3.10**
-- Core: scanpy, senepy, numpy, pandas
-- Statistics: statsmodels, scikit-learn, scipy
-- Analysis: cellphonedb, gseapy
-
-**R 4.x**
-- Core: Seurat, dplyr, ggplot2
-- Statistics: DESeq2, lme4, variancePartition
-- Pathway: SCPA, msigdbr
-- Visualization: ComplexHeatmap, ggpubr
-
----
-
-## 📊 Cohort Details
-
-| Cohort | Role | Region | n | Age Range | Groups | Nuclei |
-|--------|------|--------|---|-----------|--------|--------|
-| PsychAD Aging | Discovery | DLPFC | 124 | 20-80+ | 7 age groups | ~500K |
-| PsychAD AD | Discovery | DLPFC | 172 | 60+ | Control/AD | ~700K |
-| PsychENCODE | Replication | DLPFC | 69 | 30-80+ | 6 age groups | ~500K |
-| Mathys | Replication | FCX | 30 | 70+ | NCI/MCI/AD | ~70K |
-| Australian | Validation | Parietal | 71 | 24-93 | Control/AD | ~360K |
-
----
-
-## 📁 Repository Structure
-
-```
-├── README.md                   # This file
-├── session_info.txt            # Complete environment details
-├── LICENSE                     # MIT License
+├── notebooks/              # Analysis notebooks (numbered 00-07)
+│   ├── 00_preprocessing/
+│   ├── 01_senescence_scoring/
+│   ├── 02_glial_subclustering/
+│   ├── 03_demographics/
+│   ├── 04_composition_analysis/
+│   ├── 05_statistical_analysis/
+│   ├── 06_deg_analysis/
+│   └── 07_pathway_analysis/
 │
-├── notebooks/
-│   ├── 01_preprocessing/       # QC, normalization, batch correction
-│   ├── 02_senescence_scoring/  # SenePy workflow
-│   ├── 03_statistical_analysis/# LMM, composition, meta-analysis
-│   ├── 04_deg_analysis/        # Differential expression
-│   └── 05_downstream/          # Pathway, communication, variance
-│
-├── scripts/
-│   └── utils/                  # Reusable functions
-│
-└── data/
-    └── README.md               # Data access instructions
+├── scripts/                # Utility functions
+├── environment.yml         # Conda environment
+├── session_info.txt        # Software versions
+└── README.md              # This file
 ```
 
 ---
 
-## 📊 Data Availability
+## Quick Start
 
-**Discovery Cohorts**
-- PsychAD: https://doi.org/10.7303/syn60084804 (Synapse, requires registration)
+### Running the Pipeline
 
-**Replication Cohorts**
-- PsychENCODE: Available through PsychENCODE portal
-- Mathys: https://www.synapse.org/#!Synapse:syn18681734
-- Australian Brain Bank: Contact for access
+**Modules 00-02:** Run once per cohort (5 cohorts total)
+```bash
+# Edit DATASET variable at top of each notebook
+# Options: 'psychad_aging', 'psychad_ad', 'psychencode', 'mathys', 'australian'
 
-See `data/README.md` for detailed instructions.
+cd notebooks/00_preprocessing/
+# Run 4 notebooks sequentially
+
+cd ../01_senescence_scoring/
+# Run 1 notebook
+
+cd ../02_glial_subclustering/
+# Run 2 notebooks (only for: psychad_aging, psychad_ad, psychencode)
+```
+
+**Modules 03-07:** Combined analysis
+```bash
+cd ../03_demographics/        # Run once (all cohorts)
+cd ../04_composition_analysis/ # Per cohort + meta-analysis
+cd ../05_statistical_analysis/ # Aging + Disease tracks
+cd ../06_deg_analysis/        # Per cohort + comparisons
+cd ../07_pathway_analysis/    # SCPA + GSEApy
+```
+
+See `notebooks/README.md` for detailed execution guide.
 
 ---
 
-## 📖 Citation
+## Methods Summary
 
-**This Study:**
+### Data Processing
+- **QC:** 200-8,000 genes/cell, ≤20% mitochondrial, ≥3 cells/gene
+- **Normalization:** 10,000 counts/cell, log1p transform
+- **Batch Correction:** Harmony (50 PCs, batch = Donor)
+- **Cell Types:** 11 major types via canonical markers
+
+### Senescence Scoring
+- **Method:** SenePy (hippocampus modules)
+- **Threshold:** Mean + 2SD (youngest age group)
+- **Cell-type and sex-specific scoring**
+
+### Glial Subclustering
+Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
+- **Microglia:** 5 states (Garg et al. 2024)
+- **Astrocytes:** 6 states (Serrano-Pozo et al. 2024)
+
+### Statistical Analysis
+
+**Aging (PsychAD Aging, PsychENCODE):**
+```
+Linear Mixed Model: %SnC ~ Age × Cell_Type + Sex + Cohort + (1|Donor)
+Meta-Analysis: DerSimonian-Laird random effects
+```
+
+**Disease (PsychAD AD, Mathys, Australian):**
+```
+Linear Mixed Model: %SnC ~ Condition + Age + Sex + Cohort + (1|Donor)
+Primary Comparison: AD Cases vs Age-matched Controls
+Meta-Analysis: DerSimonian-Laird random effects
+```
+
+**Multiple Testing:** Benjamini-Hochberg FDR correction
+
+### Differential Expression
+- **Aggregation:** Pseudobulk (per Donor × Cell_Type × State)
+- **Method:** DESeq2 (via Seurat)
+- **Comparisons:** SnC vs Non-SnC, Age effects, Disease effects
+- **Thresholds:** FDR < 0.05, |log₂FC| > 0.5
+
+### Pathway Analysis
+- **Cell-level:** SCPA (MSigDB, GO Biological Process)
+- **Gene-level:** GSEApy enrichment (MSigDB, GO, KEGG, Reactome)
+
+---
+
+## Software
+
+**Complete software versions and package details:** See `session_info.txt`
+
+**Core Dependencies:**
+- Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas
+- R 4.x: Seurat, DESeq2, SCPA, msigdbr, dplyr, ggplot2
+
+**Computational Requirements:**
+- Expected runtime: ~2-3 days (Ohio Supercomputer Center)
+- Memory: High-memory nodes recommended for preprocessing and subclustering
+
+---
+
+## Data Availability
+
+### Raw Data
+- **PsychAD:** https://doi.org/10.7303/syn60084804 (Synapse)
+- **PsychENCODE:** https://psychencode.org
+- **Mathys:** https://www.synapse.org/#!Synapse:syn18681734
+- **Australian Brain Bank:** Contact for access
+
+### Processed Data
+Processed h5ad files available upon reasonable request.
+
+### Data Use
+All datasets subject to their respective data use agreements. See individual consortium websites for terms.
+
+---
+
+## Citation
+
+If you use this code or data, please cite:
+
 ```bibtex
 @article{gaitos2025senescence,
   title={Multi-Cohort Analysis of Cellular Senescence in Brain Aging and Alzheimer's Disease},
@@ -283,32 +181,7 @@ See `data/README.md` for detailed instructions.
 }
 ```
 
-**Key References:**
-
-**Microglial States:**
-```bibtex
-@article{garg2024microglia,
-  title={Exploring Cellular Heterogeneity: Single-Cell and Spatial Transcriptomics of Alzheimer Disease Brains},
-  author={Garg, J. and others},
-  journal={Research Square},
-  year={2024},
-  doi={10.21203/rs.3.rs-5045715/v1}
-}
-```
-
-**Astrocyte States:**
-```bibtex
-@article{serrano-pozo2024astrocytes,
-  title={Astrocyte transcriptomic changes along the spatiotemporal progression of Alzheimer's disease},
-  author={Serrano-Pozo, Alberto and Li, Huan and Li, Zhaozhi and others},
-  journal={Nature Neuroscience},
-  volume={27},
-  number={12},
-  pages={2384--2400},
-  year={2024},
-  doi={10.1038/s41593-024-01791-4}
-}
-```
+### Key Methods Citations
 
 **SenePy:**
 ```bibtex
@@ -329,6 +202,30 @@ See `data/README.md` for detailed instructions.
 }
 ```
 
+**Microglia States:**
+```bibtex
+@article{garg2024microglia,
+  title={Exploring Cellular Heterogeneity in Alzheimer Disease Brains},
+  author={Garg, J. and others},
+  journal={Research Square},
+  year={2024},
+  doi={10.21203/rs.3.rs-5045715/v1}
+}
+```
+
+**Astrocyte States:**
+```bibtex
+@article{serrano-pozo2024astrocytes,
+  title={Astrocyte transcriptomic changes along the spatiotemporal progression of Alzheimer's disease},
+  author={Serrano-Pozo, Alberto and others},
+  journal={Nature Neuroscience},
+  volume={27},
+  pages={2384--2400},
+  year={2024},
+  doi={10.1038/s41593-024-01791-4}
+}
+```
+
 **Mathys:**
 ```bibtex
 @article{mathys2019single,
@@ -344,53 +241,48 @@ See `data/README.md` for detailed instructions.
 
 ---
 
-## 👥 Team
+## Contributing
 
-**Principal Investigator**
-- Sara Saez-Atienzar, PhD | The Ohio State University Wexner Medical Center
+This repository contains analysis code for a specific study. For questions about methods or code:
 
-**Lead Analyst**
-- Gerald Gaitos, MD, MSc | The Ohio State University Wexner Medical Center
-
-**Collaborators**
-- Iara Souza, PhD | The Ohio State University Wexner Medical Center
-- Oscar Harari, PhD | The Ohio State University Wexner Medical Center
-  
----
-
-## 📬 Contact
-
-**Analysis Questions:**
-- Gerald Gaitos: gerald.gaitos@osumc.edu
-
-**Data Access:**
-- PsychAD: Via Synapse portal
-- Collaborations: Contact PI
+**Analysis Questions:** Gerald Gaitos (gerald.gaitos@osumc.edu)  
+**Data Access:** See Data Availability section above
 
 ---
 
-## 📝 License
+## License
 
-**Code:** MIT License (see LICENSE file)
-
-**Data:** Subject to consortium data use agreements
-- PsychAD: Synapse Terms of Use
-- PsychENCODE: Data access agreement required
-- Mathys: Synapse Terms of Use
-- Australian Brain Bank: Contact for terms
+**Code:** MIT License  
+**Data:** Subject to consortium agreements (see Data Availability)
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 **Data Contributors:**
 - PsychAD Consortium
-- PsychENCODE Consortium
+- PsychENCODE Consortium  
 - Mathys et al. study team
 - Australian Brain Bank
 
 **Computational Resources:**
 - Ohio Supercomputer Center
+
+**Team:**
+- Sara Saez-Atienzar, PhD (PI) - The Ohio State University
+- Gerald Gaitos, MD, MSc (Lead Analyst) - The Ohio State University
+- Iara Souza, PhD - The Ohio State University
+- Oscar Harari, PhD - The Ohio State University
+
+---
+
+## Notes
+
+- **Preprocessing notebooks** are generic and reusable across cohorts
+- **Subclustering** performed only on discovery and primary replication cohorts due to computational constraints
+- **Meta-analyses** stratified by brain region (DLPFC vs Frontal vs Parietal)
+- All statistical tests use FDR correction for multiple comparisons
+- See individual module READMEs for detailed methods
 
 ---
 
@@ -398,6 +290,6 @@ See `data/README.md` for detailed instructions.
 
 **Last Updated:** December 2025
 
-[⬆ Back to Top](#-cellular-senescence-in-brain-aging-and-alzheimers-disease)
+For detailed pipeline documentation, see `notebooks/README.md`
 
 </div>
