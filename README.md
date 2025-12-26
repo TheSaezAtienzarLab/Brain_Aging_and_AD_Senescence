@@ -52,42 +52,11 @@ This repository contains analysis code for a discovery-replication study investi
 │   └── 07_pathway_analysis/
 │
 ├── scripts/                # Utility functions
-├── environment.yml         # Conda environment
 ├── session_info.txt        # Software versions
 └── README.md              # This file
 ```
 
----
-
-## Quick Start
-
-### Running the Pipeline
-
-**Modules 00-02:** Run once per cohort (5 cohorts total)
-```bash
-# Edit DATASET variable at top of each notebook
-# Options: 'psychad_aging', 'psychad_ad', 'psychencode', 'mathys', 'australian'
-
-cd notebooks/00_preprocessing/
-# Run 4 notebooks sequentially
-
-cd ../01_senescence_scoring/
-# Run 1 notebook
-
-cd ../02_glial_subclustering/
-# Run 2 notebooks (only for: psychad_aging, psychad_ad, psychencode)
-```
-
-**Modules 03-07:** Combined analysis
-```bash
-cd ../03_demographics/        # Run once (all cohorts)
-cd ../04_composition_analysis/ # Per cohort + meta-analysis
-cd ../05_statistical_analysis/ # Aging + Disease tracks
-cd ../06_deg_analysis/        # Per cohort + comparisons
-cd ../07_pathway_analysis/    # SCPA + GSEApy
-```
-
-See `notebooks/README.md` for detailed execution guide.
+**Execution Guide:** See `notebooks/README.md` for detailed pipeline execution instructions.
 
 ---
 
@@ -289,7 +258,5 @@ This repository contains analysis code for a specific study. For questions about
 <div align="center">
 
 **Last Updated:** December 2025
-
-For detailed pipeline documentation, see `notebooks/README.md`
 
 </div>
