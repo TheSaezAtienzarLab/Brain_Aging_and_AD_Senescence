@@ -49,7 +49,10 @@ This repository contains analysis code for a discovery-replication study investi
 │   ├── 04_composition_analysis/
 │   ├── 05_statistical_analysis/
 │   ├── 06_deg_analysis/
-│   └── 07_pathway_analysis/
+│   └── 07_downstream_analysis/
+│       ├── pathway_enrichment/      # SCPA + GSEApy
+│       ├── cell_communication/      # CellPhoneDB
+│       └── expression_variability/  # CV + variance partition
 │
 ├── scripts/                # Utility functions
 ├── session_info.txt        # Software versions
@@ -102,8 +105,14 @@ Meta-Analysis: DerSimonian-Laird random effects
 - **Thresholds:** FDR < 0.05, |log₂FC| > 0.5
 
 ### Pathway Analysis
-- **Cell-level:** SCPA (MSigDB, GO Biological Process)
-- **Gene-level:** GSEApy enrichment (MSigDB, GO, KEGG, Reactome)
+- **Cell-level:** SCPA (pathway activity per cell)
+- **Gene-level:** GSEApy (enrichment analysis using DEG lists)
+- **Databases:** MSigDB, GO Biological Process, KEGG, Reactome
+
+### Downstream Analyses
+- **Cell-Cell Communication:** CellPhoneDB v5.0.0 (1,000 permutations)
+- **Transcriptional Variability:** Coefficient of variation (CV) analysis
+- **Variance Partition:** variancePartition package (decompose expression variance)
 
 ---
 
@@ -112,8 +121,8 @@ Meta-Analysis: DerSimonian-Laird random effects
 **Complete software versions and package details:** See `session_info.txt`
 
 **Core Dependencies:**
-- Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas
-- R 4.x: Seurat, DESeq2, SCPA, msigdbr, dplyr, ggplot2
+- Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas, cellphonedb
+- R 4.x: Seurat, DESeq2, SCPA, variancePartition, msigdbr, dplyr, ggplot2
 
 **Computational Requirements:**
 - Expected runtime: ~2-3 days (Ohio Supercomputer Center)
@@ -250,6 +259,7 @@ This repository contains analysis code for a specific study. For questions about
 - **Preprocessing notebooks** are generic and reusable across cohorts
 - **Subclustering** performed only on discovery and primary replication cohorts due to computational constraints
 - **Meta-analyses** stratified by brain region (DLPFC vs Frontal vs Parietal)
+- **Downstream analyses** (pathways, communication, variability) performed per cohort without cross-cohort comparison
 - All statistical tests use FDR correction for multiple comparisons
 - See individual module READMEs for detailed methods
 
