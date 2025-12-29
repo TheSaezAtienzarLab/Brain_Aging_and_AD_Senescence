@@ -41,6 +41,9 @@ This repository contains analysis code for a discovery-replication study investi
 ## Repository Structure
 
 ```
+├── config/
+│   └── datasets.yaml       # Dataset configurations
+│
 ├── notebooks/              # Analysis notebooks (numbered 00-07)
 │   ├── 00_preprocessing/
 │   ├── 01_senescence_scoring/
@@ -66,9 +69,9 @@ This repository contains analysis code for a discovery-replication study investi
 ## Methods Summary
 
 ### Data Processing
-- **QC:** 200-8,000 genes/cell, ≤20% mitochondrial, ≥3 cells/gene
+- **QC:** 200-8,000 genes/cell, <5% mitochondrial (snRNA-seq), ≥3 cells/gene
 - **Normalization:** 10,000 counts/cell, log1p transform
-- **Batch Correction:** Harmony (50 PCs, batch = Donor)
+- **Batch Correction:** Harmony (50 PCs, dataset-specific batch variable)
 - **Cell Types:** 11 major types via canonical markers
 
 ### Senescence Scoring
@@ -83,36 +86,41 @@ Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
 
 ### Statistical Analysis
 
-**Aging (PsychAD Aging, PsychENCODE):**
-```
-Linear Mixed Model: %SnC ~ Age × Cell_Type + Sex + Cohort + (1|Donor)
-Meta-Analysis: DerSimonian-Laird random effects
+**Aging Analysis (PsychAD Aging, PsychENCODE):**
+```python
+# Linear Mixed Model (Python statsmodels)
+%SnC ~ Age × Cell_Type + Sex + Cohort + (1|Donor)
+
+# Meta-Analysis: DerSimonian-Laird random effects
 ```
 
-**Disease (PsychAD AD, Mathys, Australian):**
-```
-Linear Mixed Model: %SnC ~ Condition + Age + Sex + Cohort + (1|Donor)
-Primary Comparison: AD Cases vs Age-matched Controls
-Meta-Analysis: DerSimonian-Laird random effects
+**Disease Analysis (PsychAD AD, Mathys, Australian):**
+```python
+# Linear Mixed Model (Python statsmodels)
+%SnC ~ Condition + Age + Sex + Cohort + (1|Donor)
+
+# Primary Comparison: AD Cases vs Age-matched Controls
+# Meta-Analysis: DerSimonian-Laird random effects
 ```
 
 **Multiple Testing:** Benjamini-Hochberg FDR correction
 
 ### Differential Expression
-- **Aggregation:** Pseudobulk (per Donor × Cell_Type × State)
-- **Method:** DESeq2 (via Seurat)
+- **Aggregation:** Pseudobulk (per Donor × Cell_Type × State) using Seurat (R)
+- **Method:** DESeq2
 - **Comparisons:** SnC vs Non-SnC, Age effects, Disease effects
 - **Thresholds:** FDR < 0.05, |log₂FC| > 0.5
+- **Note:** Uses raw counts from `layers['counts']`
 
 ### Pathway Analysis
-- **Cell-level:** SCPA (pathway activity per cell)
-- **Gene-level:** GSEApy (enrichment analysis using DEG lists)
+- **SCPA (R):** Cell-level pathway activity scores
+- **GSEApy (Python):** Gene-level enrichment analysis using DEG lists
 - **Databases:** MSigDB, GO Biological Process, KEGG, Reactome
 
 ### Downstream Analyses
-- **Cell-Cell Communication:** CellPhoneDB v5.0.0 (1,000 permutations)
-- **Transcriptional Variability:** Coefficient of variation (CV) analysis
-- **Variance Partition:** variancePartition package (decompose expression variance)
+- **CellPhoneDB (Python):** Cell-cell communication (1,000 permutations)
+- **Transcriptional Variability (Python):** Coefficient of variation analysis
+- **Variance Partition (R):** Decompose expression variance by factors
 
 ---
 
@@ -121,7 +129,7 @@ Meta-Analysis: DerSimonian-Laird random effects
 **Complete software versions and package details:** See `session_info.txt`
 
 **Core Dependencies:**
-- Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas, cellphonedb
+- Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas, cellphonedb, pyyaml
 - R 4.x: Seurat, DESeq2, SCPA, variancePartition, msigdbr, dplyr, ggplot2
 
 **Computational Requirements:**
@@ -256,10 +264,12 @@ This repository contains analysis code for a specific study. For questions about
 
 ## Notes
 
+- **Configuration:** Dataset-specific settings stored in `config/datasets.yaml` for easy customization
 - **Preprocessing notebooks** are generic and reusable across cohorts
 - **Subclustering** performed only on discovery and primary replication cohorts due to computational constraints
 - **Meta-analyses** stratified by brain region (DLPFC vs Frontal vs Parietal)
 - **Downstream analyses** (pathways, communication, variability) performed per cohort without cross-cohort comparison
+- **Data layers:** Raw counts preserved in `layers['counts']` for DESeq2; log-normalized used for analysis; scaled data stored separately
 - All statistical tests use FDR correction for multiple comparisons
 - See individual module READMEs for detailed methods
 
