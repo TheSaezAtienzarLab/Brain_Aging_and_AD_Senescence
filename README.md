@@ -132,10 +132,6 @@ Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
 - Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas, cellphonedb, pyyaml
 - R 4.x: Seurat, DESeq2, SCPA, variancePartition, msigdbr, dplyr, ggplot2
 
-**Computational Requirements:**
-- Expected runtime: ~2-3 days (Ohio Supercomputer Center)
-- Memory: High-memory nodes recommended for preprocessing and subclustering
-
 ---
 
 ## Data Availability
