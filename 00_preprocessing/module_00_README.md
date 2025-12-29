@@ -75,50 +75,6 @@ my_new_dataset:
 
 ---
 
-## Workflow
-
-### Step-by-Step Pipeline
-
-```
-1. Load Data
-   ↓
-2. Calculate QC Metrics
-   - Mitochondrial %
-   - Genes per cell
-   - Counts per cell
-   ↓
-3. Quality Control Filtering
-   - 200 ≤ genes/cell ≤ 8,000
-   - MT% < 5% (snRNA-seq)
-   - Gene min cells ≥ 3
-   ↓
-4. Preserve Raw Counts → layers['counts']
-   ↓
-5. Normalization → 10,000 counts/cell
-   ↓
-6. Log Transformation → log(x + 1)
-   ↓
-7. Highly Variable Genes → Top 2,000
-   ↓
-8. Save Raw Matrix → adata.raw
-   ↓
-9. Scaling → layers['scaled'] (NOT active layer)
-   ↓
-10. PCA → 50 components on HVGs
-   ↓
-11. Harmony Batch Correction → dataset-specific batch key
-   ↓
-12. Neighbors & UMAP → Harmony-corrected PCA
-   ↓
-13. Leiden Clustering → Resolution 0.8
-   ↓
-14. Cell Type Validation → Yang-style dotplot
-   ↓
-15. Save Preprocessed Data
-```
-
----
-
 ## Parameters
 
 ### QC Thresholds (snRNA-seq)
