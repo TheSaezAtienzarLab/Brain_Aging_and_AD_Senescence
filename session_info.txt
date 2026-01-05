@@ -1,0 +1,109 @@
+# Session Information
+# Senescence Analysis Pipeline
+# Generated: December 2025
+
+================================================================================
+PYTHON ENVIRONMENT
+================================================================================
+
+Python version: 3.13.3
+
+Core Dependencies:
+------------------
+numpy==1.26.4
+pandas==2.3.1
+scipy==1.16.0
+h5py==3.14.0
+
+Single-cell Analysis:
+--------------------
+anndata==0.6.22.post1
+# scanpy - install via pip
+# senepy - install via pip
+
+Utilities:
+---------
+pyyaml==6.0.2
+tqdm==4.67.1
+
+================================================================================
+R ENVIRONMENT
+================================================================================
+
+R version: 4.3.1
+
+Single-cell Analysis:
+--------------------
+r-seurat==5.3.0
+r-seuratobject==5.1.0
+r-harmony==1.2.3
+
+Differential Expression:
+-----------------------
+bioconductor-deseq2==1.42.0
+bioconductor-edger==4.0.16
+bioconductor-limma==3.58.1
+
+Pathway Analysis:
+----------------
+bioconductor-clusterprofiler==4.10.0
+bioconductor-enrichplot==1.22.0
+bioconductor-fgsea==1.28.0
+bioconductor-dose==3.28.1
+bioconductor-go.db==3.18.0
+bioconductor-org.hs.eg.db==3.18.0
+
+Variance Analysis:
+-----------------
+bioconductor-variancepartition==1.32.2
+
+Visualization:
+-------------
+r-ggplot2==3.5.2
+r-cowplot==1.1.3
+r-pheatmap==1.0.12
+bioconductor-complexheatmap==2.18.0
+bioconductor-enhancedvolcano==1.20.0
+r-viridis==0.6.5
+r-rcolorbrewer==1.1-3
+
+Data Manipulation:
+-----------------
+r-dplyr==1.1.4
+r-tidyr==1.3.1
+r-tibble==3.2.1
+r-readr==2.1.5
+r-stringr==1.5.1
+r-data.table==1.17.2
+
+Statistics:
+----------
+r-lme4==1.1-37
+r-lmertest==3.1-3
+bioconductor-glmgampoi==1.14.0
+
+================================================================================
+REPRODUCIBILITY NOTES
+================================================================================
+
+1. Random Seeds:
+   - Harmony: seed=42
+   - UMAP: random_state=42
+   - Leiden clustering: seed=0
+
+2. Key Parameters:
+   - HVGs: 2,000 genes
+   - PCs: 50 components
+   - Neighbors: 30
+   - Leiden: resolution=0.8
+
+3. Batch Correction:
+   - Method: Harmony
+   - Batch variable: Dataset-specific donor/sample ID
+
+4. Statistical Analysis:
+   - LMM: statsmodels MixedLM with REML
+   - Multiple testing: Benjamini-Hochberg FDR
+   - Meta-analysis: DerSimonian-Laird random effects
+
+================================================================================
