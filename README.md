@@ -2,7 +2,8 @@
 
 **Multi-cohort single-nucleus RNA-seq analysis examining cellular senescence patterns across aging and disease**
 
-[![DOI](https://img.shields.io/badge/DOI-pending-blue)]() [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-pending-blue)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
@@ -41,28 +42,21 @@ This repository contains analysis code for a discovery-replication study investi
 ## Repository Structure
 
 ```
-├── config/
-│   └── datasets.yaml       # Dataset configurations
+├── scripts/
+│   ├── 00_preprocessing.ipynb          # QC, normalization, batch correction
+│   ├── 01_senescence_scoring.ipynb     # SenePy scoring and thresholding
+│   ├── 02_statistical_analysis.ipynb   # LMM, demographics, visualization
+│   ├── 03_meta_analysis.ipynb          # Cross-cohort meta-analysis
+│   ├── 04_deg_analysis.ipynb           # Differential expression (DESeq2)
+│   ├── 05_pathway_enrichment.ipynb     # SCPA + GSEApy
+│   ├── 06_cell_communication.ipynb     # CellPhoneDB
+│   └── 07_expression_variability.ipynb # CV + variance partition
 │
-├── notebooks/              # Analysis notebooks (numbered 00-07)
-│   ├── 00_preprocessing/
-│   ├── 01_senescence_scoring/
-│   ├── 02_glial_subclustering/
-│   ├── 03_demographics/
-│   ├── 04_composition_analysis/
-│   ├── 05_statistical_analysis/
-│   ├── 06_deg_analysis/
-│   └── 07_downstream_analysis/
-│       ├── pathway_enrichment/      # SCPA + GSEApy
-│       ├── cell_communication/      # CellPhoneDB
-│       └── expression_variability/  # CV + variance partition
-│
-├── scripts/                # Utility functions
-├── session_info.txt        # Software versions
-└── README.md              # This file
+├── session_info.txt            # Software versions
+└── README.md                   # This file
 ```
 
-**Execution Guide:** See `notebooks/README.md` for detailed pipeline execution instructions.
+**Note:** Dataset configurations are embedded in each notebook's header for self-contained execution.
 
 ---
 
@@ -76,13 +70,8 @@ This repository contains analysis code for a discovery-replication study investi
 
 ### Senescence Scoring
 - **Method:** SenePy (hippocampus modules)
-- **Threshold:** Mean + 2SD (youngest age group)
-- **Cell-type and sex-specific scoring**
-
-### Glial Subclustering
-Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
-- **Microglia:** 5 states (Garg et al. 2024)
-- **Astrocytes:** 6 states (Serrano-Pozo et al. 2024)
+- **Threshold:** Mean + 2SD (youngest age group or controls)
+- **Scoring:** Cell-type and sex-specific
 
 ### Statistical Analysis
 
@@ -103,6 +92,16 @@ Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
 # Meta-Analysis: DerSimonian-Laird random effects
 ```
 
+**Cell Type Composition Analysis:**
+```python
+# Cube root transformation for compositional data
+# Handles zero-inflation and compositional constraints
+transformed_prop = (proportion / 100) ** (1/3)
+
+# Linear Mixed Model
+CubeRoot(CellType_%) ~ Age + Sex + (1|Donor)
+```
+
 **Multiple Testing:** Benjamini-Hochberg FDR correction
 
 ### Differential Expression
@@ -110,7 +109,6 @@ Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
 - **Method:** DESeq2
 - **Comparisons:** SnC vs Non-SnC, Age effects, Disease effects
 - **Thresholds:** FDR < 0.05, |log₂FC| > 0.5
-- **Note:** Uses raw counts from `layers['counts']`
 
 ### Pathway Analysis
 - **SCPA (R):** Cell-level pathway activity scores
@@ -126,7 +124,7 @@ Performed on PsychAD Aging, PsychAD AD, and PsychENCODE only:
 
 ## Software
 
-**Complete software versions and package details:** See `session_info.txt`
+**Complete software versions and package details:** See [`session_info.txt`](session_info.txt)
 
 **Core Dependencies:**
 - Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas, cellphonedb, pyyaml
@@ -164,6 +162,9 @@ If you use this code or data, please cite:
 ```
 
 ### Key Methods Citations
+
+<details>
+<summary>Click to expand citations</summary>
 
 **SenePy:**
 ```bibtex
@@ -221,6 +222,8 @@ If you use this code or data, please cite:
 }
 ```
 
+</details>
+
 ---
 
 ## Contributing
@@ -255,19 +258,6 @@ This repository contains analysis code for a specific study. For questions about
 - Gerald Gaitos, MD, MSc (Lead Analyst) - The Ohio State University
 - Iara Souza, PhD - The Ohio State University
 - Oscar Harari, PhD - The Ohio State University
-
----
-
-## Notes
-
-- **Configuration:** Dataset-specific settings stored in `config/datasets.yaml` for easy customization
-- **Preprocessing notebooks** are generic and reusable across cohorts
-- **Subclustering** performed only on discovery and primary replication cohorts due to computational constraints
-- **Meta-analyses** stratified by brain region (DLPFC vs Frontal vs Parietal)
-- **Downstream analyses** (pathways, communication, variability) performed per cohort without cross-cohort comparison
-- **Data layers:** Raw counts preserved in `layers['counts']` for DESeq2; log-normalized used for analysis; scaled data stored separately
-- All statistical tests use FDR correction for multiple comparisons
-- See individual module READMEs for detailed methods
 
 ---
 
