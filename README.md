@@ -43,20 +43,45 @@ This repository contains analysis code for a discovery-replication study investi
 
 ```
 ├── scripts/
+│   │
+│   │ ─── SENESCENCE QUANTIFICATION ───
 │   ├── 00_preprocessing.ipynb          # QC, normalization, batch correction
 │   ├── 01_senescence_scoring.ipynb     # SenePy scoring and thresholding
 │   ├── 02_statistical_analysis.ipynb   # LMM, demographics, visualization
-│   ├── 03_meta_analysis.ipynb          # Cross-cohort meta-analysis
-│   ├── 04_deg_analysis.ipynb           # Differential expression (DESeq2)
-│   ├── 05_pathway_enrichment.ipynb     # SCPA + GSEApy
-│   ├── 06_cell_communication.ipynb     # CellPhoneDB
-│   └── 07_expression_variability.ipynb # CV + variance partition
+│   ├── 03_meta_analysis.ipynb          # Cross-cohort meta-analysis (03A: LMM coefficients, 03B: Prevalence)
+│   │
+│   │ ─── DOWNSTREAM ANALYSIS ───
+│   ├── 04_subsetting_conversion.ipynb  # Subset significant cell types, h5ad→Seurat conversion
+│   ├── 05_deg_analysis.ipynb           # Pseudobulk DEG (DESeq2/dream), DEG comparisons
+│   ├── 06_pathway_enrichment.ipynb     # SCPA + GSEApy pathway analysis
+│   ├── 07_cell_communication.ipynb     # CellPhoneDB ligand-receptor analysis
+│   └── 08_expression_variability.ipynb # CV analysis + variance partition
 │
 ├── session_info.txt            # Software versions
 └── README.md                   # This file
 ```
 
 **Note:** Dataset configurations are embedded in each notebook's header for self-contained execution.
+
+### Module Dependencies
+
+```
+00 → 01 → 02 → 03 → 04 → 05 → 06
+                 ↘       ↘
+                  07      08
+```
+
+| Module | Input | Output | Language |
+|--------|-------|--------|----------|
+| 00 | Raw h5ad | Processed h5ad | Python |
+| 01 | Processed h5ad | Scored h5ad (SnC labels) | Python |
+| 02 | Scored h5ad | LMM results (CSV) | Python |
+| 03 | LMM results | Meta-analysis summary | Python |
+| 04 | Scored h5ad + significant cell types | Subsetted Seurat (.qs) | Python/R |
+| 05 | Seurat object | DEG tables (CSV) | R |
+| 06 | DEG results | Pathway enrichment | R/Python |
+| 07 | Seurat object | Communication results | Python |
+| 08 | Seurat object | Variance decomposition | R |
 
 ---
 
@@ -104,11 +129,20 @@ CubeRoot(CellType_%) ~ Age + Sex + (1|Donor)
 
 **Multiple Testing:** Benjamini-Hochberg FDR correction
 
+### Subsetting for Downstream Analysis
+- **Cell Type Selection:** Filter to significant cell types from meta-analysis (e.g., Microglia, Astrocyte, OPC)
+- **Age Group Subsetting:** Young (20-29y) vs Old (>80y) for DEG comparisons
+- **Senescence Subsets:** All cells, SnC-only, Non-SnC only
+- **Format Conversion:** h5ad → MTX → Seurat (.qs) for R-based downstream analysis
+
 ### Differential Expression
-- **Aggregation:** Pseudobulk (per Donor × Cell_Type × State) using Seurat (R)
-- **Method:** DESeq2
-- **Comparisons:** SnC vs Non-SnC, Age effects, Disease effects
+- **Aggregation:** Pseudobulk (per Donor × Cell_Type × Senescence_State) using Seurat (R)
+- **Method:** DESeq2 with variancePartition/dream() for mixed models
+- **Comparisons:**
+  - Aging: Old vs Young (within SnC, within Non-SnC, all cells)
+  - Disease: AD vs Control (within SnC, within Non-SnC, all cells)
 - **Thresholds:** FDR < 0.05, |log₂FC| > 0.5
+- **Cross-comparison:** Aging vs Disease DEG overlap, SenePy signature enrichment
 
 ### Pathway Analysis
 - **SCPA (R):** Cell-level pathway activity scores
@@ -263,6 +297,6 @@ This repository contains analysis code for a specific study. For questions about
 
 <div align="center">
 
-**Last Updated:** December 2025
+**Last Updated:** January 2026
 
 </div>
