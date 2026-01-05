@@ -1,0 +1,32 @@
+# Senescence Analysis Pipeline - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core scientific computing
+numpy>=1.26.0
+pandas>=2.0.0
+scipy>=1.11.0
+h5py>=3.9.0
+
+# Single-cell analysis
+scanpy>=1.9.0
+anndata>=0.9.0
+senepy
+
+# Batch correction & clustering
+harmonypy
+leidenalg
+umap-learn
+
+# Statistical analysis
+statsmodels>=0.14.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Downstream analysis
+gseapy>=1.0.0
+
+# Utilities
+pyyaml>=6.0
+tqdm>=4.65.0
