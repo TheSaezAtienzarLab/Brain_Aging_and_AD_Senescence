@@ -17,6 +17,7 @@ This repository contains analysis code for a discovery-replication study investi
 1. Does cellular senescence increase with age in healthy brain?
 2. Does Alzheimer's disease increase senescence beyond normal aging?
 3. Which cell types show age- and disease-associated senescence?
+4. Do cell type composition changes confound senescence patterns?
 
 ---
 
@@ -32,160 +33,208 @@ This repository contains analysis code for a discovery-replication study investi
 
 **Total:** 366 samples, ~2M nuclei
 
-**Meta-Analysis:**
-- Aging: PsychAD Aging + PsychENCODE (DLPFC)
-- Disease: PsychAD AD + Mathys (Frontal cortex)
-- Validation: Australian Brain (Parietal, independent)
-
 ---
 
 ## Repository Structure
-
 ```
 ├── scripts/
 │   │
 │   │ ─── SENESCENCE QUANTIFICATION ───
 │   ├── 00_preprocessing.ipynb          # QC, normalization, batch correction
 │   ├── 01_senescence_scoring.ipynb     # SenePy scoring and thresholding
-│   ├── 02_statistical_analysis.ipynb   # LMM, demographics, visualization
-│   ├── 03_meta_analysis.ipynb          # Cross-cohort meta-analysis (03A: LMM coefficients, 03B: Prevalence)
+│   ├── 02_statistical_analysis.ipynb   # Demographics, composition, LMM, trends
+│   ├── 02.5_probability_modeling.ipynb # Logistic GLMM, Zero-Inflated Beta, group comparisons
+│   ├── 03_meta_analysis.ipynb          # Cross-cohort meta-analysis
 │   │
 │   │ ─── DOWNSTREAM ANALYSIS ───
-│   ├── 04_subsetting_conversion.ipynb  # Subset significant cell types, h5ad→Seurat conversion
-│   ├── 05_deg_analysis.ipynb           # Pseudobulk DEG (DESeq2/dream), DEG comparisons
+│   ├── 04_subclustering.ipynb          # Cell-type subclustering & label transfer
+│   ├── 05_deg_analysis.ipynb           # Pseudobulk DEG (DESeq2), visualization
 │   ├── 06_pathway_enrichment.ipynb     # SCPA + GSEApy pathway analysis
 │   ├── 07_cell_communication.ipynb     # CellPhoneDB ligand-receptor analysis
 │   └── 08_expression_variability.ipynb # CV analysis + variance partition
 │
-├── session_info.txt            # Software versions
-└── README.md                   # This file
+├── session_info.txt
+└── README.md
 ```
-
-**Note:** Dataset configurations are embedded in each notebook's header for self-contained execution.
 
 ### Module Dependencies
-
 ```
-00 → 01 → 02 → 03 → 04 → 05 → 06
-                 ↘       ↘
-                  07      08
+00 → 01 → 02 → 02.5 → 03 → 04 → 05 → 06
+                          ↘       ↘
+                           07      08
 ```
 
-| Module | Input | Output | Language |
-|--------|-------|--------|----------|
-| 00 | Raw h5ad | Processed h5ad | Python |
-| 01 | Processed h5ad | Scored h5ad (SnC labels) | Python |
-| 02 | Scored h5ad | LMM results (CSV) | Python |
-| 03 | LMM results | Meta-analysis summary | Python |
-| 04 | Scored h5ad + significant cell types | Subsetted Seurat (.qs) | Python/R |
-| 05 | Seurat object | DEG tables (CSV) | R |
-| 06 | DEG results | Pathway enrichment | R/Python |
-| 07 | Seurat object | Communication results | Python |
-| 08 | Seurat object | Variance decomposition | R |
+---
+
+## Statistical Framework for Senescence Analysis
+
+### Module 02: Cohort Characterization
+
+**Section 4: Cell Type Composition**
+
+Tests whether cell type proportions change with age/disease (potential confounder).
+```
+# Cube root transformation for compositional data
+(Proportion)^(1/3) ~ Age + Sex + Cohort    [GLM per cell type]
+```
+
+**Section 6: Senescence Proportion (LMM)**
+
+Tests age/disease effect on %SnC per cell type with donor random effect.
+```
+%SnC ~ Age + Sex + Cohort + (1|Donor)      [LMM per cell type]
+```
+
+**Section 9: Study Group Trend Analysis**
+
+Compares multiple models to characterize accumulation pattern across age bins or disease stages.
+```
+# Five models compared:
+1. ANOVA         → Do groups differ at all?
+2. Spearman      → Monotonic trend (non-parametric)
+3. OLS Linear    → Linear accumulation (β = % per group)
+4. Beta Regression → Bounded proportions (logit scale)
+5. Log-Linear    → Exponential accumulation (fold-change)
+
+# Model selection by R² comparison:
+- R²(Log-Linear) > R²(OLS) → Exponential pattern
+- R²(OLS) > R²(Log-Linear) → Linear pattern
+```
+
+**Section 11: Sex Interaction**
+
+Tests whether age/disease effects differ between sexes.
+```
+%SnC ~ Age × Sex + Cohort + (1|Donor)      [LMM per cell type]
+```
+
+---
+
+### Module 02.5: Probability Modeling
+
+Advanced models for senescence probability using R (via rpy2).
+
+**Part 1: Cell-Level Analysis (Logistic GLMM)**
+
+Binary outcome: Is this cell senescent?
+```
+is_senescent ~ Age_scaled + Sex + Cohort + (1|Donor)
+
+# Link function comparison:
+- Logit   → Linear odds accumulation
+- Cloglog → Exponential risk accumulation
+```
+
+**Part 2: Donor-Level Analysis (Zero-Inflated Beta)**
+
+Continuous outcome: What proportion of cells are senescent?
+```
+# Two-component model:
+prop ~ Age_scaled + Sex + Cohort           [Beta: among those with SnC > 0]
+zi   ~ Age_scaled + Sex + Cohort           [Zero-inflation: P(SnC = 0)]
+
+# Answers two questions:
+1. Does P(having ANY senescent cells) change with age?
+2. Among those with SnC, does proportion increase with age?
+```
+
+**Part 3: Group Comparisons (Categorical)**
+
+Simple comparisons when no continuous trend exists, or for disease studies.
+```
+# Unadjusted
+Wilcoxon rank-sum: %SnC in Old vs Young
+Wilcoxon rank-sum: %SnC in AD vs Control
+Effect size: Cliff's delta
+
+# Adjusted (GLM)
+prop_cuberoot ~ Age_Group + Sex + Cohort   [Aging: Old vs Young]
+prop_cuberoot ~ Disease + Age + Sex + Cohort [Disease: AD vs Control]
+
+# Adjusted (Cell-level Logistic GLMM)
+is_senescent ~ Age_Group + Sex + Cohort + (1|Donor)
+is_senescent ~ Disease + Age + Sex + Cohort + (1|Donor)
+```
+
+---
+
+### Decision Framework
+```
+                    ┌─────────────────────────┐
+                    │  Module 02 Section 9    │
+                    │  Trend Analysis         │
+                    └───────────┬─────────────┘
+                                │
+                    ┌───────────▼───────────┐
+                    │  Significant trend?    │
+                    └───────────┬───────────┘
+                                │
+              ┌─────────────────┴─────────────────┐
+              │                                   │
+              ▼ YES                               ▼ NO
+    ┌─────────────────────┐             ┌─────────────────────┐
+    │ Module 02.5         │             │ Module 02.5         │
+    │ Part 1-2            │             │ Part 3              │
+    │ Continuous models   │             │ Group comparisons   │
+    │ (GLMM, ZI-Beta)     │             │ (Old vs Young)      │
+    └─────────────────────┘             └─────────────────────┘
+```
+
+**For Disease Studies:** Always use Part 3 (categorical: AD vs Control)
 
 ---
 
 ## Methods Summary
 
 ### Data Processing
-- **QC:** 200-8,000 genes/cell, <5% mitochondrial (snRNA-seq), ≥3 cells/gene
+- **QC:** 200-8,000 genes/cell, <5% mitochondrial, ≥3 cells/gene
 - **Normalization:** 10,000 counts/cell, log1p transform
-- **Batch Correction:** Harmony (50 PCs, dataset-specific batch variable)
-- **Cell Types:** 11 major types via canonical markers
+- **Batch Correction:** Harmony (50 PCs)
+- **Cell Types:** 12 major types via canonical markers
 
 ### Senescence Scoring
 - **Method:** SenePy (hippocampus modules)
-- **Threshold:** Mean + 2SD (youngest age group or controls)
+- **Threshold:** Mean + 2SD (youngest group or controls)
 - **Scoring:** Cell-type and sex-specific
 
-### Statistical Analysis
+### Multiple Testing
+- **Correction:** Benjamini-Hochberg FDR
+- **Threshold:** FDR < 0.05
 
-**Aging Analysis (PsychAD Aging, PsychENCODE):**
-```python
-# Linear Mixed Model (Python statsmodels)
-%SnC ~ Age × Cell_Type + Sex + Cohort + (1|Donor)
+### Meta-Analysis (Module 03)
+- **Method:** DerSimonian-Laird random effects
+- **Aging:** PsychAD Aging + PsychENCODE
+- **Disease:** PsychAD AD + Mathys
 
-# Meta-Analysis: DerSimonian-Laird random effects
-```
+### Downstream Analysis
+- **Subclustering (04):** scANVI label transfer (Garg, Serrano-Pozo references)
+- **DEG (05):** Pseudobulk DESeq2 (6 comparisons per cell type)
+- **Pathways (06):** SCPA + GSEApy (MSigDB, GO, KEGG, Reactome)
+- **Communication (07):** CellPhoneDB (1,000 permutations)
+- **Variance (08):** variancePartition decomposition
 
-**Disease Analysis (PsychAD AD, Mathys, Australian):**
-```python
-# Linear Mixed Model (Python statsmodels)
-%SnC ~ Condition + Age + Sex + Cohort + (1|Donor)
-
-# Primary Comparison: AD Cases vs Age-matched Controls
-# Meta-Analysis: DerSimonian-Laird random effects
-```
-
-**Cell Type Composition Analysis:**
-```python
-# Cube root transformation for compositional data
-# Handles zero-inflation and compositional constraints
-transformed_prop = (proportion / 100) ** (1/3)
-
-# Linear Mixed Model
-CubeRoot(CellType_%) ~ Age + Sex + (1|Donor)
-```
-
-**Multiple Testing:** Benjamini-Hochberg FDR correction
-
-### Subsetting for Downstream Analysis
-- **Cell Type Selection:** Filter to significant cell types from meta-analysis (e.g., Microglia, Astrocyte, OPC)
-- **Age Group Subsetting:** Young (20-29y) vs Old (>80y) for DEG comparisons
-- **Senescence Subsets:** All cells, SnC-only, Non-SnC only
-- **Format Conversion:** h5ad → MTX → Seurat (.qs) for R-based downstream analysis
-
-### Differential Expression
-- **Aggregation:** Pseudobulk (per Donor × Cell_Type × Senescence_State) using Seurat (R)
-- **Method:** DESeq2 with variancePartition/dream() for mixed models
-- **Comparisons:**
-  - Aging: Old vs Young (within SnC, within Non-SnC, all cells)
-  - Disease: AD vs Control (within SnC, within Non-SnC, all cells)
-- **Thresholds:** FDR < 0.05, |log₂FC| > 0.5
-- **Cross-comparison:** Aging vs Disease DEG overlap, SenePy signature enrichment
-
-### Pathway Analysis
-- **SCPA (R):** Cell-level pathway activity scores
-- **GSEApy (Python):** Gene-level enrichment analysis using DEG lists
-- **Databases:** MSigDB, GO Biological Process, KEGG, Reactome
-
-### Downstream Analyses
-- **CellPhoneDB (Python):** Cell-cell communication (1,000 permutations)
-- **Transcriptional Variability (Python):** Coefficient of variation analysis
-- **Variance Partition (R):** Decompose expression variance by factors
-
----
+--
 
 ## Software
 
-**Complete software versions and package details:** See [`session_info.txt`](session_info.txt)
-
 **Core Dependencies:**
-- Python 3.10: scanpy, senepy, statsmodels, scipy, numpy, pandas, cellphonedb, pyyaml
-- R 4.x: Seurat, DESeq2, SCPA, variancePartition, msigdbr, dplyr, ggplot2
+- Python 3.10: scanpy, senepy, statsmodels, scipy, pandas
+- R 4.x: lme4, glmmTMB, Seurat, DESeq2, variancePartition
+
+**Complete versions:** See [`session_info.txt`](session_info.txt)
 
 ---
 
 ## Data Availability
 
-### Raw Data
-- **PsychAD:** https://doi.org/10.7303/syn60084804 (Synapse)
+- **PsychAD:** https://doi.org/10.7303/syn60084804
 - **PsychENCODE:** https://psychencode.org
 - **Mathys:** https://www.synapse.org/#!Synapse:syn18681734
 - **Australian Brain Bank:** Contact for access
 
-### Processed Data
-Processed h5ad files available upon reasonable request.
-
-### Data Use
-All datasets subject to their respective data use agreements. See individual consortium websites for terms.
-
 ---
 
 ## Citation
-
-If you use this code or data, please cite:
-
 ```bibtex
 @article{gaitos2025senescence,
   title={Multi-Cohort Analysis of Cellular Senescence in Brain Aging and Alzheimer's Disease},
@@ -195,108 +244,49 @@ If you use this code or data, please cite:
 }
 ```
 
-### Key Methods Citations
-
 <details>
-<summary>Click to expand citations</summary>
+<summary>Methods Citations</summary>
 
-**SenePy:**
-```bibtex
-@article{casella2023senepy,
-  title={SenePy: a Python library for single-cell senescence analysis},
-  author={Casella, G. and others},
-  year={2023}
-}
-```
-
-**PsychAD:**
-```bibtex
-@article{fullard2024psychad,
-  title={Single-nucleus transcriptomic atlas of the human brain},
-  author={Fullard, J.F. and others},
-  journal={Nature},
-  year={2024}
-}
-```
-
-**Microglia States:**
-```bibtex
-@article{garg2024microglia,
-  title={Exploring Cellular Heterogeneity in Alzheimer Disease Brains},
-  author={Garg, J. and others},
-  journal={Research Square},
-  year={2024},
-  doi={10.21203/rs.3.rs-5045715/v1}
-}
-```
-
-**Astrocyte States:**
-```bibtex
-@article{serrano-pozo2024astrocytes,
-  title={Astrocyte transcriptomic changes along the spatiotemporal progression of Alzheimer's disease},
-  author={Serrano-Pozo, Alberto and others},
-  journal={Nature Neuroscience},
-  volume={27},
-  pages={2384--2400},
-  year={2024},
-  doi={10.1038/s41593-024-01791-4}
-}
-```
-
-**Mathys:**
-```bibtex
-@article{mathys2019single,
-  title={Single-cell transcriptomic analysis of Alzheimer's disease},
-  author={Mathys, H. and others},
-  journal={Nature},
-  volume={570},
-  pages={332--337},
-  year={2019},
-  doi={10.1038/s41586-019-1195-2}
-}
-```
+**SenePy:** Casella et al. 2023  
+**PsychAD:** Fullard et al. 2024, Nature  
+**Microglia States:** Garg et al. 2024, Research Square  
+**Astrocyte States:** Serrano-Pozo et al. 2024, Nature Neuroscience  
+**Mathys:** Mathys et al. 2019, Nature
 
 </details>
 
 ---
 
-## Contributing
+## Contact
 
-This repository contains analysis code for a specific study. For questions about methods or code:
-
-**Analysis Questions:** Gerald Gaitos (gerald.gaitos@osumc.edu)  
-**Data Access:** See Data Availability section above
+**Analysis:** Gerald Gaitos (gerald.gaitos@osumc.edu)
 
 ---
 
 ## License
 
 **Code:** MIT License  
-**Data:** Subject to consortium agreements (see Data Availability)
+**Data:** Subject to consortium agreements
 
 ---
 
 ## Acknowledgments
 
-**Data Contributors:**
-- PsychAD Consortium
-- PsychENCODE Consortium  
-- Mathys et al. study team
-- Australian Brain Bank
-
-**Computational Resources:**
-- Ohio Supercomputer Center
+**Data:** PsychAD, PsychENCODE, Mathys et al., Australian Brain Bank  
+**Computing:** Ohio Supercomputer Center
 
 **Team:**
-- Sara Saez-Atienzar, PhD (PI) - The Ohio State University
-- Gerald Gaitos, MD, MSc (Lead Analyst) - The Ohio State University
-- Iara Souza, PhD - The Ohio State University
-- Oscar Harari, PhD - The Ohio State University
+- Sara Saez-Atienzar, PhD (PI)
+- Gerald Gaitos, MD, MSc
+- Iara Souza, PhD
+- Oscar Harari, PhD
 
 ---
 
 <div align="center">
 
-**Last Updated:** January 2026
+**The Ohio State University Wexner Medical Center**
+
+Last Updated: January 2026
 
 </div>
