@@ -40,7 +40,7 @@ This repository contains analysis code for a discovery-replication study investi
 | Cohort | Type | Region | Notes |
 |--------|------|--------|-------|
 | Morabito (Miyoshi & Morabito et al., *Nat Genet* 2024) | Sporadic AD + DSAD | Frontal cortex | SenePy scoring + hallmark module scoring; cell type deconvolution from source |
-| Gates (van Olst et al., *Nat Med* 2025) | AN1792-immunized AD vs Control | Cortex | Cell2Location deconvolution (PsychAD reference) |
+| Gate (van Olst et al., *Nat Med* 2025) | AN1792-immunized AD vs Control | Cortex | Cell2Location deconvolution (PsychAD reference) |
 
 ---
 
@@ -193,7 +193,7 @@ Benjamini-Hochberg FDR correction throughout — threshold **FDR < 0.05**
 **Senescence Enrichment:** Sloan et al. 2026, Cell Genomics  
 **Cell2Location:** Kleshchevnikov et al. 2022, Nature Biotechnology
 **Morabito (Spatial AD):** Miyoshi, Morabito et al. 2024, Nature Genetics (DOI: 10.1038/s41588-024-01961-x)
-**Gates (Spatial Immunization):** van Olst et al. 2025, Nature Medicine (DOI: 10.1038/s41591-025-03574-1)
+**Gate (Spatial Immunization):** van Olst et al. 2025, Nature Medicine (DOI: 10.1038/s41591-025-03574-1)
 
 </details>
 
