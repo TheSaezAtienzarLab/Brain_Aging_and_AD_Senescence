@@ -9,19 +9,22 @@
 
 ## Overview
 
-This repository contains analysis code for a discovery-replication study investigating cellular senescence in human brain across aging and Alzheimer's disease using single-nucleus RNA-sequencing.
+This repository contains analysis code for a discovery-replication study investigating cellular senescence in human brain across aging and Alzheimer's disease using single-nucleus RNA-sequencing and spatial transcriptomics.
 
-**Study Design:** Discovery (PsychAD) → Replication (PsychENCODE, Mathys) → Meta-Analysis
+**Study Design:** Discovery (PsychAD) → Replication (PsychENCODE, Mathys) → Meta-Analysis → Downstream Characterization → Spatial Validation
 
 **Key Questions:**
 1. Does cellular senescence increase with age in healthy brain?
 2. Does Alzheimer's disease increase senescence beyond normal aging?
 3. Which cell types show age- and disease-associated senescence?
-4. Do cell type composition changes confound senescence patterns?
+4. Do senescent cells show canonical hallmarks (cell cycle arrest, pathway enrichment)?
+5. Do cell type composition changes confound senescence patterns?
 
 ---
 
 ## Cohorts
+
+### Main Cohorts (snRNA-seq)
 
 | Cohort | Type | n | Age Range | Nuclei | Region |
 |--------|------|---|-----------|--------|--------|
@@ -32,6 +35,13 @@ This repository contains analysis code for a discovery-replication study investi
 
 *Note: PsychAD Aging and PsychAD AD are subsets from the same consortium filtered by analysis type. The AD cohort includes young samples from the aging subset as comparison controls.*
 
+### Spatial Cohorts (Visium)
+
+| Cohort | Type | Region | Notes |
+|--------|------|--------|-------|
+| Morabito (Miyoshi & Morabito et al., *Nat Genet* 2024) | Sporadic AD + DSAD | Frontal cortex | SenePy scoring + hallmark module scoring; cell type deconvolution from source |
+| Gates (van Olst et al., *Nat Med* 2025) | AN1792-immunized AD vs Control | Cortex | Cell2Location deconvolution (PsychAD reference) |
+
 ---
 
 ## Repository Structure
@@ -41,129 +51,109 @@ This repository contains analysis code for a discovery-replication study investi
 │   │
 │   │ ─── SENESCENCE QUANTIFICATION ───
 │   ├── 00_preprocessing.ipynb              # QC, normalization, batch correction
-│   ├── 01_cellular_senescence_scoring.ipynb # SenePy scoring and thresholding
-│   ├── 02_statistical_analysis.ipynb       # Demographics, composition, LMM, trends
-│   ├── 02_5_probability_modeling.ipynb     # Logistic GLMM, Zero-Inflated Beta
-│   ├── 03_meta_analysis.ipynb              # Cross-cohort meta-analysis
+│   ├── 00.5_regression.ipynb               # UMI/SnC score regression; Pearson residuals correction
+│   ├── 01_senescence_scoring.ipynb         # SenePy scoring and thresholding
+│   ├── 02_statistical_analysis.ipynb       # Demographics, composition, LMM, trends, GLMM, Zero-Inflated Beta
+│   ├── 03_meta_analysis.ipynb              # Cross-cohort DerSimonian-Laird random effects
 │   │
 │   │ ─── DOWNSTREAM ANALYSIS ───
-│   ├── 04_subsetting_conversion.ipynb      # Subsetting, format conversion, subclustering
-│   ├── 05_deg_analysis.ipynb               # Pseudobulk DEG (DESeq2)
-│   ├── 06_pathway_enrichment.ipynb         # SCPA + GSEApy pathway analysis (planned)
-│   ├── 07_cell_communication.ipynb         # CellPhoneDB ligand-receptor (planned)
-│   └── 08_expression_variability.ipynb     # CV + variance partition (planned)
+│   ├── 04_subsetting_conversion.ipynb      # Subsetting, subclustering, subtype validation*
+│   ├── 05_deg_analysis.ipynb               # Pseudobulk DEG (limma-voom)
+│   ├── 06_gsea.ipynb                       # Pathway enrichment (GSEApy)
+│   ├── 07_cell_communication.ipynb         # CellPhoneDB ligand-receptor (1,000 permutations)
+│   ├── 08_variability.ipynb                # Transcriptional variability + variance partition
+│   ├── 09_senescence_enrichment_cell_cycle.ipynb  # Cell cycle arrest + senescence module scoring (Aging + AD)
+│   │
+│   │ ─── SPATIAL TRANSCRIPTOMICS ───
+│   ├── 10_spatial_morabito.ipynb           # Spatial senescence mapping — Morabito AD cohort
+│   └── 10_spatial_gates.ipynb             # Spatial senescence mapping — Gates aging cohort
 │
 ├── session_info.txt
 └── README.md
 ```
 
+*\*Module 04 outputs excluded from repository due to file size.*
+
 ### Module Dependencies
 
 ```
-00 → 01 → 02 → 02.5 → 03 → 04 → 05 → 06
-                               ↘       ↘
-                                07      08
+00 → 00.5 → 01 → 02 → 03 → 04 → 05 → 06
+                          ↘        ↘
+                           07       08
+                                    ↘
+                                     09
+10 (spatial — parallel arm)
 ```
 
 ---
 
 ## Statistical Framework
 
-### Module 02: Cohort Characterization
-
-**Cell Type Composition** — Tests whether proportions change with age/disease (potential confounder).
-```
-(Proportion)^(1/3) ~ Age + Sex + Cohort    [GLM per cell type]
-```
-
-**Senescence Proportion (LMM)** — Tests age/disease effect on %SnC per cell type.
-```
-%SnC ~ Age + Sex + Cohort + (1|Donor)      [LMM per cell type]
-```
-
-**Trend Analysis** — Compares models to characterize accumulation pattern across age bins or disease stages.
-```
-Models compared: ANOVA, Spearman, OLS Linear, Beta Regression, Log-Linear
-Model selection: R²(Log-Linear) > R²(OLS) → Exponential; otherwise Linear
-```
+> Full implementation details are documented within each script. This section summarizes key methodological decisions and their rationale.
 
 ---
 
-### Module 02.5: Probability Modeling
+### 🔬 Data Processing
 
-Advanced models for senescence probability using R (via rpy2).
-
-**Part 1: Cell-Level (Logistic GLMM)** — Binary: Is this cell senescent?
-```
-is_senescent ~ Age_scaled + Sex + Cohort + (1|Donor)
-Output: Odds Ratio per decade
-```
-
-**Part 2: Donor-Level (Zero-Inflated Beta)** — Continuous: What proportion are senescent?
-```
-prop ~ Age_scaled + Sex + Cohort           [Beta component]
-zi   ~ Age_scaled + Sex + Cohort           [Zero-inflation component]
-Output: exp(β) per decade
-```
-
-**Part 3: Group Comparisons** — Categorical comparisons when no continuous trend exists.
-```
-Mann-Whitney U: %SnC in Old vs Young (or AD vs Control)
-Effect size: Cliff's delta
-```
+| Step | Method | Rationale |
+|------|--------|-----------|
+| UMI correction | Pearson residuals regression | Senescence scores strongly correlate with sequencing depth in brain snRNA-seq; removed prior to all downstream analysis |
+| Senescence scoring | SenePy hippocampus hub modules | Threshold: Mean + 2SD of youngest/control group, applied cell type- and sex-specifically |
+| Batch correction | Harmony (50 PCs) | Cross-cohort integration of DLPFC snRNA-seq data |
+| Subclustering | Seurat + Harmony | Microglia: 14 states · Astrocytes: 7 states · OPCs: 3 substates |
 
 ---
 
-### Module 03: Meta-Analysis
+### 📊 Primary Statistics
 
-Combines age effect estimates (β coefficients) from LMM across cohorts.
+| Question | Model | Output |
+|----------|-------|--------|
+| Does %SnC change with age/disease? | LMM: `%SnC ~ Age + Sex + Cohort + (1\|Donor)` | β per decade, FDR |
+| Linear vs. exponential accumulation? | OLS vs. log-linear R² comparison | Trend shape per cell type |
+| Cell-level senescence probability? | Logistic GLMM: `is_senescent ~ Age + Sex + Cohort + (1\|Donor)` | Odds ratio per decade |
+| Donor-level proportion modeling? | Zero-Inflated Beta regression | exp(β) per decade |
+| Categorical group differences? | Mann-Whitney U + Cliff's delta | Effect size (Old vs Young / AD vs Control) |
 
-```
-Method: DerSimonian-Laird random effects (primary)
-        Fixed effects inverse-variance weighting (sensitivity)
-Heterogeneity: I², Cochran's Q, τ²
-Correction: FDR for multiple testing
-```
+> ⚠️ **Pseudoreplication:** All tests use the donor — not the cell — as the unit of analysis.
 
 ---
 
-## Methods Summary
+### 🔁 Cross-Cohort Meta-Analysis
 
-### Data Processing
-- **QC:** 200–8,000 genes/cell, <5% mitochondrial, ≥3 cells/gene
-- **Normalization:** 10,000 counts/cell, log1p transform
-- **Batch Correction:** Harmony (50 PCs)
-- **Cell Types:** Harmonized across cohorts (Excitatory, Inhibitory, Astrocyte, Oligodendrocyte, OPC, Microglia, Endothelial, Pericyte, VSMC, VLMC, PVM, Adaptive)
+| Component | Approach |
+|-----------|----------|
+| Primary method | DerSimonian-Laird random effects |
+| Sensitivity | Fixed-effects inverse-variance weighting |
+| Heterogeneity | I², Cochran's Q, τ² |
 
-### Senescence Scoring
-- **Method:** SenePy (hippocampus modules)
-- **Threshold:** Mean + 2SD (youngest group or controls)
-- **Scoring:** Cell-type and sex-specific
+---
 
-### Downstream Analysis
-- **Subsetting (04):** Format conversion (h5ad → Seurat), subclustering of Microglia (14 states, Harari Lab) and Astrocytes (7 states, Serrano-Pozo et al.)
-- **DEG (05):** Pseudobulk DESeq2 (FDR < 0.05, |log₂FC| > 0.5), 6 comparisons per cell type:
-  1. Old vs Young (all cells)
-  2. SnC vs Non-SnC (all cells)
-  3. Old vs Young (SnC only)
-  4. Old vs Young (Non-SnC only)
-  5. SnC vs Non-SnC (Old only)
-  6. SnC vs Non-SnC (Young only)
-- **Pathways (06):** SCPA + GSEApy (MSigDB, GO, KEGG, Reactome)
-- **Communication (07):** CellPhoneDB (1,000 permutations)
-- **Variance (08):** variancePartition decomposition
+### 🧬 Downstream Analysis
 
-### Multiple Testing
-- **Correction:** Benjamini-Hochberg FDR
-- **Threshold:** FDR < 0.05
+| Module | Method | Details |
+|--------|--------|---------|
+| DEG | Pseudobulk limma-voom | 6 comparisons per cell type × age group × senescence label |
+| Pathway enrichment | GSEApy | MSigDB, GO, KEGG, Reactome |
+| Cell communication | CellPhoneDB | 1,000 permutations |
+| Variability | variancePartition | Transcriptional variance decomposition |
+| Senescence validation | Module scoring + LMM | 10 gene lists + Tirosh cell cycle (G1/S/G2M); astrocytes & OPCs; aging + AD |
+
+---
+
+### ✅ Multiple Testing
+
+Benjamini-Hochberg FDR correction throughout — threshold **FDR < 0.05**
 
 ---
 
 ## Software
 
 **Core Dependencies:**
-- Python 3.10: scanpy, senepy, statsmodels, scipy, pandas
-- R 4.x: lme4, glmmTMB, Seurat, DESeq2
+- Python 3.10: scanpy, senepy, statsmodels, scipy, pandas, omicverse
+- R 4.x: lme4, lmerTest, glmmTMB, limma, edgeR, variancePartition
+
+**Spatial:**
+- cell2location (GPU required for Gates cohort)
 
 **Complete versions:** See [`session_info.txt`](session_info.txt)
 
@@ -174,6 +164,8 @@ Correction: FDR for multiple testing
 - **PsychAD:** https://doi.org/10.7303/syn60084804
 - **PsychENCODE:** https://psychencode.org
 - **Mathys:** https://www.synapse.org/#!Synapse:syn18681734
+- **Morabito:** https://doi.org/10.1038/s41588-024-01961-x (GEO: GSE233208)
+- **Gates:** https://doi.org/10.1038/s41591-025-03574-1
 
 ---
 
@@ -194,10 +186,14 @@ Correction: FDR for multiple testing
 <summary>Methods Citations</summary>
 
 **SenePy:** Casella et al. 2023  
-**PsychAD:** Fullard et al. 2024, Nature  
+**PsychAD:** Lee, Roussos, Hoffman et al. (PsychAD Consortium) 2024  
 **Microglia States:** Garg et al. 2024, Research Square  
 **Astrocyte States:** Serrano-Pozo et al. 2024, Nature Neuroscience  
-**Mathys:** Mathys et al. 2019, Nature
+**Mathys:** Mathys et al. 2019, Nature  
+**Senescence Enrichment:** Sloan et al. 2026, Cell Genomics  
+**Cell2Location:** Kleshchevnikov et al. 2022, Nature Biotechnology
+**Morabito (Spatial AD):** Miyoshi, Morabito et al. 2024, Nature Genetics (DOI: 10.1038/s41588-024-01961-x)
+**Gates (Spatial Immunization):** van Olst et al. 2025, Nature Medicine (DOI: 10.1038/s41591-025-03574-1)
 
 </details>
 
@@ -218,7 +214,7 @@ Correction: FDR for multiple testing
 
 ## Acknowledgments
 
-**Data:** PsychAD, PsychENCODE, Mathys et al.  
+**Data:** PsychAD, PsychENCODE, Mathys et al., Morabito et al., Gates et al.  
 **Computing:** Ohio Supercomputer Center
 
 **Team:**
@@ -235,6 +231,6 @@ Correction: FDR for multiple testing
 
 **The Ohio State University Wexner Medical Center**
 
-Last Updated: January 2026
+Last Updated: March 2026
 
 </div>
