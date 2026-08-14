@@ -108,10 +108,9 @@ Primary objects are not redistributed here.
 
 ```bibtex
 @article{gaitos2026senescence,
-  title={A coordinated glial senescence program emerges during human
-         brain aging and is rewired in Alzheimer's disease},
-  author={Gaitos, Gerald and De Souza, Iara and Harari, Oscar and
-          Saez-Atienzar, Sara},
+  title={Distinct cellular senescence landscapes characterize physiological aging and Alzheimer's disease},
+  author={Gaitos GM, de Souza I, Harari O and
+          Saez-Atienzar, S},
   journal={In preparation},
   year={2026}
 }
