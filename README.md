@@ -55,19 +55,20 @@ Cohorts are discovery/replication within an arm, not independent tests. Results 
 
 **Senescence calls.** SenePy on analytic Pearson residuals, hippocampus hubs, cell-type and sex specific. A cell is senescent above mean + 2SD of the reference group — youngest age bin for aging, controls for disease — computed per cell type. Subclustered objects carry a state-aware recomputation, `is_senescent_state`, used by the astrocyte and OPC state panels. Each table records which call it used.
 
-**Three measures**, donor as the unit of analysis. Age is scaled per decade. For AD, disease group is categorical with healthy controls as reference and age retained as a continuous covariate.
+**Four measures**, donor as the unit of analysis. Age is scaled per decade. For AD, disease group is categorical with healthy controls as reference and age retained as a continuous covariate.
 
 | Measure | Model |
 |---|---|
-| Susceptibility, cell level | `is_senescent[c∈type] ~ Age_dec + log10(counts+1) + Sex + Contributing Source + (1\|Donor)` |
-| Susceptibility, donor level | `%SnC ~ Age_dec + Sex + Contributing Source + log10(counts+1)` |
-| Burden | `is_burden[c∈all] ~ Age_dec + CT/State-Proportion_z + log10(counts+1) + Sex + Contributing Source + (1\|Donor)` |
+| Composition | Cube-root Gaussian GLM: `∛CellProp ~ Age_dec or Disease Group + Sex + Contributing Source` |
+| Susceptibility, cell level | Logistic GLMM: `is_senescent[c∈type] ~ Age_dec + log10(counts+1) + Sex + Contributing Source + (1\|Donor)` |
+| Susceptibility, donor level | Robust LM: `%SnC ~ Age_dec + Sex + Contributing Source + log10(counts+1)` |
+| Burden | Logistic GLMM: `is_burden[c∈all] ~ Age_dec + CT/State-Proportion_z + log10(counts+1) + Sex + Contributing Source + (1\|Donor)` |
 
-Susceptibility is the proportion of senescent cells within a cell type or state, fitted as a logistic GLMM (`lme4`, binomial logit, donor random effect) and orthogonally as robust linear regression on donor %SnC. Burden is the proportion of senescent cells of a given type among all cells; `is_burden` is 1 for cells that are both senescent and of the target type. The donor's z-scored proportion of that type is included in the burden model only, to separate a change in burden from a change in abundance.
+Composition is the proportion of all cells belonging to a type or state, cube-root transformed (Garg et al. 2025). Susceptibility is the proportion of senescent cells within a type or state, fitted as a logistic GLMM (`lme4`, binomial logit, donor random effect) and orthogonally as robust linear regression on donor %SnC. Burden is the proportion of senescent cells of a given type among all cells; `is_burden` is 1 for cells that are both senescent and of the target type. The donor's z-scored proportion of that type is included in the burden model only, to separate a change in burden from a change in abundance.
 
-State-level models are the same, refit with states in place of cell types, with BH correction across the states of a given cell type.
+State-level models are the same, refit with states in place of cell types, with BH correction across the states of a given cell type. State proportion is taken within the parent cell type rather than over all cells.
 
-**Depth is a covariate.** Depth is regressed out of the SenePy input, and `log10(counts+1)` is also carried in every model. A residual association persists after the expression-matrix correction — Figure S9B shows Spearman correlations from −0.23 to +0.54, sign differing by cell type.
+**Depth is a covariate.** Depth is regressed out of the SenePy input, and `log10(counts+1)` is also carried in every senescence model. A residual association persists after the expression-matrix correction — Figure S9B shows Spearman correlations from −0.23 to +0.54, sign differing by cell type.
 
 **Meta-analysis.** DerSimonian-Laird random effects, implemented directly in NumPy and SciPy. PsychAD + PsychENCODE for aging, PsychAD + Mathys for AD. Inverse-variance weighting is applied on the scale each model was fitted on — β for the RLR, log-odds for the GLMMs, cube-root proportion for the compositional model. CIs use z = 1.96. Negative τ² truncated to zero. With k = 2, rows with I² above 65 percent have two cohort estimates that disagree and a wide pooled interval for that reason.
 
@@ -115,7 +116,7 @@ Primary objects are not redistributed here.
 }
 ```
 
-**Methods:** SenePy (Casella 2023) · Pearson residuals (Lause 2021) · PsychAD (Lee, Roussos, Hoffman 2024) · Microglia states (Keren-Shaul 2017, Sala Frigerio 2019) · Astrocyte states (Serrano-Pozo 2024) · Proportions (Garg 2025) · Mathys (2019) · Senescence enrichment (Sloan 2026) · Pseudoreplication (Murphy & Skene 2023)
+**Methods:** SenePy (Casella 2023) · Pearson residuals (Lause 2021) · PsychAD (Lee, Roussos, Hoffman 2024) · Microglia states (Keren-Shaul 2017, Sala Frigerio 2019) · Astrocyte states (Serrano-Pozo 2024) · Compositional analysis (Garg 2025) · Mathys (2019) · Senescence enrichment (Sloan 2026) · Pseudoreplication (Murphy & Skene 2023)
 
 ---
 
