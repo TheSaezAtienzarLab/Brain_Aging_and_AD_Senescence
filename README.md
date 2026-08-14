@@ -27,8 +27,7 @@ The analysis pipeline that produced these tables is not in this repository. It n
 ├── Main_Figure_5.ipynb           # 5A–5F
 ├── Supplementary_Figures.ipynb   # S1–S9
 ├── results/                      # source data, one table per panel
-│   └── DEGs/                     # GSEA prerank tables behind Figure 5
-└── figures/                      # rendered output
+    └── DEGs/                     # GSEA prerank tables behind Figure 5
 ```
 
 Each notebook opens with a settings cell defining rcParams, `PALETTES` and `color_for()`. Run it first, then any panel cell. Panel cells read only from `results/` and never open an `.h5ad` or `.rds`.
